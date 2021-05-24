@@ -6,16 +6,25 @@
 t=0
 x=96
 y=24
+player = {
+dir = 0
+}
 
 function TIC()
 
 	if btn(0) then y=y-1 end
 	if btn(1) then y=y+1 end
-	if btn(2) then x=x-1 end
-	if btn(3) then x=x+1 end
+	if btn(2) then
+	 x=x-1
+		dir=1 
+	end
+	if btn(3) then
+	 x=x+1
+		dir=0
+ end
 
 	cls(9)
-	spr(352+t%60//10*2,x,y,1,3,0,0,2,2)
+	spr(352+t%60//10*2,x,y,1,3,dir,0,2,2)
 	print("LET'S SWIM!",84,84,12)
 	t=t+1
 end
