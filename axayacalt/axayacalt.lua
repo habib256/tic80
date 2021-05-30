@@ -7,11 +7,11 @@
 t=0
 
 camera = {
-	x=0,y=0
+	x=0,y=0,px,py
 }
 
 player = {
- x,y,aim
+ x,y,aim,swim
 }
 
 monster = {
@@ -20,7 +20,7 @@ monster = {
 
 game = {
 	state = 3,
-	init = 0
+	init = -1
 }
 
 -- FONCTION PRINCIPALE
@@ -69,7 +69,7 @@ function initAttract()
 end
 
 function attractMode()
-if game.init == 0 then initAttract() game.init=1 end
+if game.init == -1 then initAttract() game.init=1 end
 	cls(0)
 	updatePlayer()
 	updateMonster()
@@ -93,12 +93,13 @@ function initArena()
  player.x = 76
  player.y = 29
  player.aim = -1
+ player.swm = -1
  camera.x = player.x
  camera.y = player.y
 end
 
 function arena()
-	if game.init == 0 then initArena() game.init=1 end
+	if game.init == -1 then initArena() game.init=1 end
 	cls(0)
 	updatePlayer()
 	-- updateMonster()
@@ -121,7 +122,7 @@ function initSolo()
 end
 
 function solo()
-	if game.init == 0 then initSolo() game.init=1 end
+	if game.init == -1 then initSolo() game.init=1 end
 	cls(0)
 	updatePlayer()
 	-- updateMonster()
@@ -139,35 +140,35 @@ end
 function updatePlayer()
 
  -- Avance vers le haut
- if btn(0) then 
+ if btnp(0) then 
 	val = mget(player.x,player.y-1)
-	if val== 1  or val == 2 or val == 3  or val == 39  -- A Wall
+	if val== 1  or val == 2 or val == 3  or val == 39 or val == 12  or val == 23  -- A Wall
 	then else
   player.aim = -1
   player.y = player.y -1
 end
 end
  -- Avance vers le bas
- if btn(1) then 
+ if btnp(1) then 
 	val = mget(player.x,player.y+1)
-	if val== 1 or val == 2 or val == 3  or val == 39 -- A Wall
+	if val== 1 or val == 2 or val == 3  or val == 39 or val == 12  or val == 23 -- A Wall
 	then else
   player.aim = -1 
   player.y= player.y +1
 	end
  end
  -- Avance vers la gauche
- if btn(2) then 
+ if btnp(2) then 
 	val = mget(player.x-1,player.y)
-	if val== 1 or val == 2 or val == 3  or val == 39 -- A Wall
+	if val== 1 or val == 2 or val == 3  or val == 39 or val == 12  or val == 23 -- A Wall
 	then else
 	player.x = player.x -1
 	end
   end
   -- Avance vers la droite
- if btn(3) then 
+ if btnp(3) then 
 	val = mget(player.x+1,player.y)
-	if val== 1 or val == 2 or val == 3 or val == 39 -- A Wall
+	if val== 1 or val == 2 or val == 3 or val == 39 or val == 12  or val == 23 -- A Wall
 	then else
 	player.aim = -1
 	player.x = player.x +1
@@ -644,41 +645,41 @@ end
 -- 042:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
 -- 043:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
 -- 048:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
--- 049:fffffffffffffffffffffffffffffffffffff444ffff4444ffff4404ffff4444
--- 050:ffffffffffffffffffffffffffffffff44ffffff444fffff044fffff444fffff
--- 051:ffffffffffffffffffffffffffffffffffffff44fffff444fffff440fffff444
--- 052:ffffffffffffffffffffffffffffffff444fffff4444ffff4044ffff4444ffff
+-- 049:ffffffffffffffffffffffffffff0000fff00444fff04444fff04404fff04444
+-- 050:ffffffffffffffffffffffff000fffff4400ffff4440ffff0440ffff4440ffff
+-- 051:fffffffffffffffffffffffffffff000ffff0044ffff0444ffff0440ffff0444
+-- 052:ffffffffffffffffffffffff0000ffff44400fff44440fff40440fff44440fff
 -- 053:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
--- 054:fffffffffffffffffffffffffffffffffffffffffffffff4fffffff4fffffff4
--- 055:ffffffffffffffffffffffffffffffff44444fff444444ff404044ff444444ff
--- 056:ffffffffffffffffffffffffffffffffffffffffff4ffffff444fffff404ffff
+-- 054:fffffffffffffffffffffffffffffff0ffffff00ffffff04ffffff04ffffff04
+-- 055:ffffffffffffffffffffffff000000ff4444400f4444440f4040440f4444440f
+-- 056:fffffffffffffffffffffffffffffffff000ffff00400fff04440fff04040fff
 -- 057:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
--- 058:fffffffffffffffffffffffffffffffffff44444ff444444ff440404ff444444
+-- 058:ffffffffffffffffffffffffff000000f0044444f0444444f0440404f0444444
 -- 059:ffffffffffffffffffffffffffffffffffffffff4fffffff4fffffff4fffffff
--- 064:ffffffffffffffffffffffffffffffffffffffffff444444f4400444ff444444
--- 065:ffff4400fffff444ffffff44ffff9900fffff99044f4f9094044f9094444f909
--- 066:044fffff44ffffff4fffffff099fffff99ffffff09f4ffff09f44fff09f44fff
--- 067:fffff440ffffff44fffffff4fffff990ffffff99ffff4f90fff44f90fff44f90
--- 068:0044ffff444fffff44ffffff0099ffff099fffff909f4f44909f4404909f4444
--- 069:ffffffffffffffffffffffffffffffffffffffff444444ff4440044f444444ff
--- 070:fffffff4fffffffffffffffffffffff9ffffffffffffff4ffffff44ffffff44f
--- 071:400044ff44444ffff444ffff900099ff99099fff90909f4f90909f4490909ff4
--- 072:f404fffff444fffff444fffff444fffff444fffff4044fff4444ffff44444fff
--- 073:fffffffffffffffffffff444ffffff44fffff444fffff444ffff4044ffff444f
--- 074:ff440004fff44444ffff444fff990009f4f9909944f9090944f909094ff90909
--- 075:4fffffffffffffffffffffff9ffffffffffffffff4fffffff44ffffff44fffff
--- 080:fffffff4ffffffffffffffffffffffffffffffffffffffffffffffffffffffff
--- 081:f44ff909f444f99ffffff9ffffffffdffffffdffffffffdfffffdddfffffffff
--- 082:09ff444f99f444fff9ff44ffdffffffffdffffffdfffffffdddfffffffffffff
--- 083:f444ff90ff444f99ff44ff90fffffffdffffffd0fffffffdfffffdddffffffff
--- 084:909ff44ff99f444fff9ffffffdffffffffdffffffdfffffffdddffffffffffff
--- 085:4fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
--- 086:fff444ffffff444fffff44fffffffffffffffffffffffffffffffffdffffffff
--- 087:90909fff99f99fff9fff9ffffdfdffffdfffdffffdfdffffddfdddffffffffff
--- 088:44044fffff444fffffffffffffffffffffffffffffffffffffffffffffffffff
--- 089:ffff444fffff444fffff444fffff404fffff404fffff444ffffff4ffffffffff
--- 090:fff90909fff99f99fff9fff9ffffdfdffffdfffdffffdfdfffdddfddffffffff
--- 091:ff444ffff444ffffff44ffffffffffffffffffffffffffffdfffffffffffffff
+-- 064:fffffffffffffffffffffffffffffffff0000000004444440440044400444444
+-- 065:fff04400fff00444fff00044fff0990000000990440409094044090944440909
+-- 066:0440ffff440fffff4000ffff0990ffff99000fff090400ff090440ff09044000
+-- 067:ffff0440ffff0044ffff0004ffff0990fff00099ff004090ff04409000044090
+-- 068:00440fff44400fff44000fff00990fff09900000909040449090440490904444
+-- 069:ffffffffffffffffffffffffffffffff0000000f444444004440044044444400
+-- 070:ffffff04ffffff00ffffff00ffffff09fffff000ffff0040ffff0440ff000440
+-- 071:4000440f4444400f0444000f9000990f99099000909090409090904490909004
+-- 072:04040fff04440fff04440fff04440fff044400ff040440ff444400ff444440ff
+-- 073:ffffffffffff0000ffff0444ffff0044ffff0444fff00444fff04044fff04440
+-- 074:f044000400044444000044400099000904099099440909094409090940090909
+-- 075:4fffffff0fffffff00ffffff90ffffff000fffff0400ffff0440ffff044000ff
+-- 080:f0000004ffffff00ffffffffffffffffffffffffffffffffffffffffffffffff
+-- 081:044009090444099000000900ffff00d0ffff0d00fff000d0fff0ddd0fff00000
+-- 082:09004440990444000900440fd000000f0d0fffffd000ffffddd0ffff0000ffff
+-- 083:0444009000444099f0440090f000000dfffff0d0ffff000dffff0dddffff0000
+-- 084:9090044009904440009000000d00ffff00d0ffff0d000fff0ddd0fff00000fff
+-- 085:4000000f00ffffffffffffffffffffffffffffffffffffffffffffffffffffff
+-- 086:ff044400ff004440fff04400fff00000fffffff0ffffff00ffffff0dffffff00
+-- 087:90909000990990f0900090ff0d0d00ffd000d0ff0d0d000fdd0ddd0f0000000f
+-- 088:440440ff004440fff00000ffffffffffffffffffffffffffffffffffffffffff
+-- 089:fff04440fff04440fff04440fff04040fff04040fff04440fff00400ffff000f
+-- 090:00090909ff099099ff090009ff00d0d0ff0d000df000d0d0f0ddd0ddf0000000
+-- 091:004440ff044400ff00440fff00000fff0fffffff00ffffffd0ffffff00ffffff
 -- 096:0000000000000000000000000000000000000004000000000000000000000000
 -- 097:0000000000000000000000000444444040444004440444004444004404440000
 -- 098:0000000000000000000000000000000000000000400000004000000040000000
