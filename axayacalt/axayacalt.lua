@@ -11,7 +11,7 @@ camera = {
 }
 
 player = {
- x,y,dir,state
+ x,y,dir,state,live,
 }
 
 monster = {
@@ -20,13 +20,14 @@ monster = {
 
 game = {
 	state = 2,
-	init = -1
+	init = -1,
+	time = 0
 }
 
 -- FONCTION PRINCIPALE
 -- --------------------
 function TIC()
- t=t+2
+game.time = game.time +1
  if game.state == -1 then flyBy() end
  if game.state == 0 then attractMode() end
  if game.state == 1 then solo() end
@@ -141,17 +142,16 @@ end
 
 function updatePlayer()
 
-
  -- Very important player state update for water and aiming
  player.state = 0
- if btn(7) then player.state = 2 end  -- Carre Shoot Button
- if inWater (player.x , player.y) == 1 then player.state = 1 end
+ if btn(7) then player.state = 2 end  -- Shoot Button
+ if isWater (player.x , player.y) == 1 then player.state = 1 end
 
  -- Mouvement
  -- Avance vers le haut
  if btnp(0) then 
 	player.dir = 0
-	if playerAccess(player.x,player.y-1) == 1 then	 
+	if playerCanMove(player.x,player.y-1) == 1 then	 
   	 player.y = player.y -1
 	end
  end
@@ -159,28 +159,28 @@ function updatePlayer()
  -- Avance vers le bas
  if btnp(1) then 
 	player.dir = 2
-	 if playerAccess(player.x,player.y+1) == 1 then
+	 if playerCanMove(player.x,player.y+1) == 1 then
   	player.y= player.y +1
 	 end
  end
  -- Avance vers la gauche
  if btnp(2) then 
 	player.dir = 3
-  if playerAccess(player.x-1,player.y) == 1 then
+  if playerCanMove(player.x-1,player.y) == 1 then
 	  player.x = player.x -1
 	 end
  end
   -- Avance vers la droite
   if btnp(3) then 
 	player.dir = 1
-   if playerAccess(player.x+1,player.y) == 1 then
+   if playerCanMove(player.x+1,player.y) == 1 then
 	   player.x = player.x +1
 	 end
 	end
 
 end
 
-function playerAccess (x,y)
+function playerCanMove (x,y)
  val = mget(x,y)
  if val== 1  or val == 2 or val == 3  or val == 39 or val == 10  or val == 11 or val == 12  or val == 23  or val == 15 or val == 17 or val == 20 or val == 21 or val == 22 or val == 37 or val == 18 then  
 	return -1
@@ -193,7 +193,7 @@ function playerAccess (x,y)
  end
 end
 
-function inWater (x,y)
+function isWater (x,y)
   val = mget(x,y)
    if val== 14 then -- Water tiles
      return 1 
@@ -217,7 +217,7 @@ function updateMonster()
 	end
 end	
 
-function monsterAccess (x,y)
+function monsterCanMove (x,y)
 	val = mget(x,y)
 	if val== 1  or val == 2 or val == 3  or val == 39 or val == 12  or val == 23  or val == 15 or val == 17 or val == 20 or val == 21 or val == 22 or val == 37 or val == 18 then  return -1
 	else
@@ -231,40 +231,50 @@ function monsterAccess (x,y)
 
 function drawPlayer()
 
+	-- print(game.time%60//30,75,1*24+6,10,2,2)
+
  if player.state == 0 then -- Normal walking state
+  -- En Face
   if player.dir == -1 then 
    spr(256,(player.x-camera.x)*24,(player.y-camera.y)*24,15,1,0,0,3,3) 
    spr(271,(player.x-camera.x)*24+8,(player.y-camera.y)*24+4,15,1,0,0,1,1)
   end
-  if player.dir == 0 then  spr(256,(player.x-camera.x)*24,(player.y-camera.y)*24,15,1,0,0,3,3) end	
-  if player.dir == 1 then spr(259,(player.x-camera.x)*24,(player.y-camera.y)*24,15,1,0,0,3,3)
-   end	
-  if player.dir == 2 then spr(256,(player.x-camera.x)*24,(player.y-camera.y)*24,15,1,0,0,3,3) 
+  -- Vers le haut
+  if player.dir == 0 then spr(304+game.time%60//30*3,(player.x-camera.x)*24,(player.y-camera.y)*24,15,1,0,0,3,3)  end
+  -- vers la droite	
+  if player.dir == 1 then spr(259+game.time%60//30*3,(player.x-camera.x)*24,(player.y-camera.y)*24,15,1,0,0,3,3)  end	
+   -- Vers le bas 
+  if player.dir == 2 then spr(304+game.time%60//30*3,(player.x-camera.x)*24,(player.y-camera.y)*24,15,1,0,0,3,3)
     spr(271,(player.x-camera.x)*24+8,(player.y-camera.y)*24+4,15,1,0,0,1,1)
   end	
-  if player.dir == 3 then spr(259,(player.x-camera.x)*24,(player.y-camera.y)*24,15,1,1,0,3,3) end	
- end
+  -- Ver la gauche
+  if player.dir == 3 then spr(259+game.time%60//30*3,(player.x-camera.x)*24,(player.y-camera.y)*24,15,1,1,0,3,3) end	
+end
  if player.state == 1 then -- Swimming mode
 	if player.dir == -1 then spr(268,(player.x-camera.x)*24,(player.y-camera.y)*24,15,1,0,0,3,3)
-	  spr(271,(player.x-camera.x)*24+8,(player.y-camera.y)*24+4,15,1,0,0,1,1)
- end
-	if player.dir >= 0 then spr(268,(player.x-camera.x)*24,(player.y-camera.y)*24,15,1,0,player.dir,3,3) end	
-   end
+	  spr(271,(player.x-camera.x)*24+8,(player.y-camera.y)*24+4,15,1,0,0,1,1) end	
+  if player.dir >= 0 then spr(265+game.time%60//30*3,(player.x-camera.x)*24,(player.y-camera.y)*24,15,1,0,player.dir,3,3) end	
+end
  if player.state == 2 then --Aiming mode
-	if player.dir == -1 then spr(256,(player.x-camera.x)*24,(player.y-camera.y)*24,15,1,0,0,3,3) end
-	if player.dir == 0 then  spr(310,(player.x-camera.x)*24,(player.y-camera.y)*24,15,1,0,0,3,3) end	
-	if player.dir == 1 then spr(307,(player.x-camera.x)*24,(player.y-camera.y)*24,15,1,0,0,3,3) end	
-	if player.dir == 2 then spr(313,(player.x-camera.x)*24,(player.y-camera.y)*24,15,1,0,0,3,3) end	
-	if player.dir == 3 then spr(307,(player.x-camera.x)*24,(player.y-camera.y)*24,15,1,1,0,3,3) end	
+	if player.dir == -1 then spr(256,(player.x-camera.x)*24,(player.y-camera.y)*24,15,1,0,0,3,3) 
+		spr(271,(player.x-camera.x)*24+8,(player.y-camera.y)*24+4,15,1,0,0,1,1)
+	end
+	if player.dir == 0 then  spr(313,(player.x-camera.x)*24,(player.y-camera.y)*24,15,1,0,0,3,3) end	
+	if player.dir == 1 then spr(310,(player.x-camera.x)*24,(player.y-camera.y)*24,15,1,0,0,3,3) end	
+	if player.dir == 2 then spr(316,(player.x-camera.x)*24,(player.y-camera.y)*24,15,1,0,0,3,3) end	
+	if player.dir == 3 then spr(310,(player.x-camera.x)*24,(player.y-camera.y)*24,15,1,1,0,3,3) end	
    end
 end
    
+
+function drawMonster()
+  spr(352+t%60//30*3,(monster.x-camera.x)*24,(monster.y-camera.y)*24,0,1,monster.dir,0,3,3)
+end
    
-   function drawMonster()
-	   spr(352+t%60//30*3,(monster.x-camera.x)*24,(monster.y-camera.y)*24,0,1,monster.dir,0,3,3)
-   end
-   
--- Draw Sprites
+
+
+-- SPRITE  DRAWING
+-- -----------------------------
 function drawMap(x,y) -- draw 64x64 Sprite Map
 	x = toInt(x)
 	y= toInt(y)
@@ -685,71 +695,88 @@ end
 -- 006:fffffffffffffffffffffffffffffffffffffff0fffffff0fffffff0fffffff0
 -- 007:ffffffffffffffffffffffff000000ff04444400444444404444404044404440
 -- 008:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
--- 012:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
--- 013:fffffffffffffffffffffffff000000000444440044444440444444404444444
--- 014:ffffffffffffffffffffffffffffffff0fffffff0fffffff0fffffff0fffffff
--- 015:044444004444444044040440444444404400044004444400f044400099000990
+-- 009:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+-- 010:fffffffffffffffffffffffff000000000444440044444440444444404444444
+-- 011:ffffffffffffffffffffffffffffffff0fffffff0fffffff0fffffff0fffffff
+-- 012:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0000
+-- 013:fffffffffffffffff00000000044444004444444044444440444444404444444
+-- 014:ffffffffffffffffffffffff0fffffff0fffffff0fffffff0fffffff00000fff
+-- 015:0444440044444440440404404444444044000440044444000044400099000990
 -- 016:fffffff0fffffff0fffffff0fffffff0ffffff00fffff004fffff044fff00044
 -- 017:4444444004444400004440009900099009909900090909040909090409090904
 -- 018:ffffffffffffffffffffffffffffffffffffffff0fffffff40ffffff4000ffff
 -- 019:fffffff0fffffff0ffffffffffffff00ffff0004fff00404ff004400ff044440
 -- 020:444400000444440f0044400f9990090f00990900090999040909090409090900
 -- 021:ffffffffffffffffffffffff000fffff0400ffff0440ffff0440ffff0000ffff
--- 022:fffffff0fffffff0ffffffffffffff00ffff0004fff00404ff004400ff044440
--- 023:444400000444440f0044400f9990090f00990900090999040909090409090900
--- 024:ffffffffffffffffffffffff000fffff0400ffff0440ffff0440ffff0000ffff
--- 028:fffffffffffffffffffffffffffffff0ffffff00fffff004ffff0044ffff0444
--- 029:0444444400444440f00444000090009040990990409090900090909040909090
--- 030:0fffffff0fffffffffffffff00ffffff400fffff4400ffff04400fff44440fff
--- 031:ffdfdffffdfffdffffdfdfffdddfdddfffffffffffffffffffffffffffffffff
+-- 022:fffffff0fffffff0fffffffffffffff0ffffff00ffffff04ffffff04ffffff00
+-- 023:444400000444440f0044400f9990090f0099090f090999000909090044090904
+-- 024:ffffffffffffffffffffffffffffffffffffffffffffffff0fffffff0fffffff
+-- 025:fffffffffffffffffffffffffffffff0ffffff00fffff004ffff0044ffff0444
+-- 026:0444444400444440f00444000090009040990990409090900090909040909090
+-- 027:0fffffff0fffffffffffffff00ffffff400fffff4400ffff04400fff44440fff
+-- 028:ffff0404ffff0444ffff0044fffff004ffffff00fffffff0ffffffffffffffff
+-- 029:004444404004440000900090409909904090909000909090f0909090f0909090
+-- 030:04040fff44440fff04400fff4400ffff400fffff00ffffffffffffffffffffff
 -- 032:fff04440fff00444ffff0440ffff0000fffffffffffffff0fffffff0fffffff0
 -- 033:09090900099099040900090000d0d0000d000d0f00d0d000ddd0ddd000000000
 -- 034:4440ffff4400ffff440fffff000fffffffffffffffffffffffffffffffffffff
 -- 035:ff000400ffff0000ffffff0dffffff0dffffff0dffffff00ffffffffffffffff
 -- 036:0909000f09090d0fd0d0d0000d0d0d0d0000d0dd0ff00dd0ffff0000ffffffff
 -- 037:ffffffffffffffff0fffffff0fffffff0fffffff0fffffffffffffffffffffff
--- 038:ff000400ffff0000ffffff00fffff00dfffff0d0fffff00dffffff00fffffff0
--- 039:0909000f09090d0fd0d0d00f0d00dd00d0000dd00d0f00d0d0d0f0dd0000f000
--- 040:ffffffffffffffffffffffffffffffff00ffffffd0ffffff00ffffff0fffffff
--- 044:ffff0404ffff0000ffffffffffffffffffffffffffffffffffffffffffffffff
--- 045:0090909000990990f0900090f00d0d00f0d000d0f0dd0dd0f0dd0dd0f0000000
--- 046:04040fff00000fffffffffffffffffffffffffffffffffffffffffffffffffff
--- 051:fffffffffffffffffffffffffffff000ffff0044ffff0444ffff0440ffff0444
--- 052:ffffffffffffffffffffffff0000ffff44400fff44440fff40440fff44440fff
+-- 038:fffffff0fffffff0fffffff0ffffff00ffffff0dffffff0dffffff0dffffff00
+-- 039:4409090404090900d0d0d0d00d000d00d000d0000000ddd0dd000000000fffff
+-- 040:0fffffff0fffffffffffffffffffffffffffffffffffffffffffffffffffffff
+-- 041:ffff0404ffff0000ffffffffffffffffffffffffffffffffffffffffffffffff
+-- 042:0090909000990990f0900090f00d0d00f0d000d0f0dd0dd0f0dd0dd0f0000000
+-- 043:04040fff00000fffffffffffffffffffffffffffffffffffffffffffffffffff
+-- 044:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+-- 045:f0990990f0900090f00d0d0000dd0dd00ddd0ddd0dd000dd0d0fff0d00fffff0
+-- 046:ffffffffffffffffffffffff0fffffff0fffffff0fffffff0fffffff0fffffff
+-- 048:fffffffffffffffffffffffffffffffffffffff0fffffff0fffffff0fffffff0
+-- 049:ffffffffffffffffffffffff0000000f04444400444444404444444044444440
+-- 050:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+-- 051:fffffffffffffffffffffffffffffffffffffff0fffffff0fffffff0fffffff0
+-- 052:ffffffffffffffffffffffff0000000f04444400444444404444444044444440
 -- 053:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
--- 054:fffffffffffffffffffffffffffffff0ffffff00ffffff04ffffff04ffffff04
--- 055:ffffffffffffffffffffffff000000ff4444400f4444440f4040440f4444440f
--- 056:fffffffffffffffffffffffffffffffff000ffff00400fff04440fff04040fff
--- 057:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
--- 058:ffffffffffffffffffffffffff000000f0044444f0444444f0440404f0444444
--- 059:ffffffffffffffffffffffff0fffffff00ffffff40ffffff40ffffff40ffffff
--- 060:ffffffffffffffffffffffffffffffffffffff00fffff004fffff044fffff044
--- 061:ffffffffffffffffffffffffffffffff00000fff444400ff444440ff040440ff
--- 062:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
--- 067:ffff0440ffff0044ffff0004ffff0990fff00099ff004090ff04409000044090
--- 068:00440fff44400fff44000fff00990fff09900000909040449090440490904444
--- 069:ffffffffffffffffffffffffffffffff0000000f444444004440044044444400
--- 070:ffffff04ffffff00ffffff00ffffff09fffff000ffff0040ffff0440ff000440
--- 071:4000440f4444400f0444000f9000990f99099000909090409090904490909004
--- 072:04040fff04440fff04440fff04440fff044400ff040440ff444400ff444440ff
--- 073:ffffffffffff0000ffff0444ffff0044ffff0444fff00444fff04044fff04440
--- 074:f044000400044444000044400099000904099099440909094409090940090909
--- 075:40ffffff00ffffff00ffffff90ffffff000fffff0400ffff0440ffff044000ff
--- 076:fffff0440000004004040004004400000444009900440009f0000409ff040409
--- 077:444440ff000040ff000400ff444000ff000990ff9099000f0909040009090440
--- 078:ffffffffffffffffffffffffffffffffffffffffffffffffffffffff0fffffff
--- 083:0444009000444099f0440090f000000dfffff0d0ffff000dffff0dddffff0000
--- 084:9090044009904440009000000d00ffff00d0ffff0d000fff0ddd0fff00000fff
--- 085:4000000f00ffffffffffffffffffffffffffffffffffffffffffffffffffffff
--- 086:ff044400ff004440fff04400fff00000fffffff0ffffff00ffffff0dffffff00
--- 087:90909000990990f0900090ff0d0d00ffd000d0ff0d0d000fdd0ddd0f0000000f
--- 088:440440ff004440fff00000ffffffffffffffffffffffffffffffffffffffffff
--- 089:fff04440fff04440fff04440fff04040fff04040fff04440fff00400ffff000f
--- 090:00090909ff099099ff090009ff00d0d0ff0d000df000d0d0f0ddd0ddf0000000
--- 091:004440ff044400ff00440fff00000fff0fffffff00ffffffd0ffffff00ffffff
--- 092:ff000409ffff0009ffffff09ffffff09ffffff00ffffff0dfffff000fffff0dd
--- 093:090900440909000490990f0400090f04d0d00f04000d0f00d0d000ffd0ddd0ff
--- 094:00000fff44440fff44000fff4040ffff0400ffff000fffffffffffffffffffff
+-- 054:fffffffffffffffffffffffffffff000ffff0044ffff0444ffff0440ffff0444
+-- 055:ffffffffffffffffffffffff0000ffff44400fff44440fff40440fff44440fff
+-- 056:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+-- 057:fffffffffffffffffffffffffffffff0ffffff00ffffff04ffffff04ffffff04
+-- 058:ffffffffffffffffffffffff000000ff4444400f4444440f4040440f4444440f
+-- 059:fffffffffffffffffffffffffffffffff000ffff00400fff04440fff04040fff
+-- 060:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+-- 061:ffffffffffffffffffffffffff000000f0044444f0444444f0440404f0444444
+-- 062:ffffffffffffffffffffffff0fffffff00ffffff40ffffff40ffffff40ffffff
+-- 064:fffffff0fffffff0fffffff0fffffff0ffffff00fffff004fffff044fff00044
+-- 065:4444444004444400004440009900099009909900090909040909090409090900
+-- 066:ffffffffffffffffffffffffffffffff0fffffff0fffffff00ffffff40ffffff
+-- 067:fffffff0fffffff0fffffffffffffff0ffffff00ffffff04fffff004fffff040
+-- 068:44444440044444000044400f9900099009909900090909040909090409090904
+-- 069:ffffffffffffffffffffffffffffffff0fffffff00ffffff40ffffff4000ffff
+-- 070:ffff0440ffff0044ffff0004ffff0990fff00099ff004090ff04409000044090
+-- 071:00440fff44400fff44000fff00990fff09900000909040449090440490904444
+-- 072:ffffffffffffffffffffffffffffffff0000000f444444004440044044444400
+-- 073:ffffff04ffffff00ffffff00ffffff09fffff000ffff0040ffff0440ff000440
+-- 074:4000440f4444400f0444000f9000990f99099000909090409090904490909004
+-- 075:04040fff04440fff04440fff04440fff044400ff040440ff444400ff444440ff
+-- 076:ffffffffffff0000ffff0444ffff0044ffff0444fff00444fff04044fff04440
+-- 077:f044000400044444000044400099000904099099440909094409090940090909
+-- 078:40ffffff00ffffff00ffffff90ffffff000fffff0400ffff0440ffff044000ff
+-- 080:fff04440fff00444ffff0440ffff0000fffffff0fffffff0ffffffffffffffff
+-- 081:09090904099099040900090000d0d00fddd00d0f00000d0ffff0d000fff0ddd0
+-- 082:40ffffff40ffffff00ffffffffffffffffffffffffffffffffffffffffffffff
+-- 083:fffff044fffff044fffff000fffffffffffffffffffffffffffffff0fffffff0
+-- 084:09090900099099040900090000d0d0000d00ddd00d00000000d0ffffddd0ffff
+-- 085:4440ffff4400ffff440fffff000fffffffffffffffffffffffffffffffffffff
+-- 086:0444009000444099f0440090f000000dfffff0d0ffff000dffff0dddffff0000
+-- 087:9090044009904440009000000d00ffff00d0ffff0d000fff0ddd0fff00000fff
+-- 088:4000000f00ffffffffffffffffffffffffffffffffffffffffffffffffffffff
+-- 089:ff044400ff004440fff04400fff00000fffffff0ffffff00ffffff0dffffff00
+-- 090:90909000990990f0900090ff0d0d00ffd000d0ff0d0d000fdd0ddd0f0000000f
+-- 091:440440ff004440fff00000ffffffffffffffffffffffffffffffffffffffffff
+-- 092:fff04440fff04440fff04440fff04040fff04040fff04440fff00400ffff000f
+-- 093:00090909ff099099ff090009ff00d0d0ff0d000df000d0d0f0ddd0ddf0000000
+-- 094:004440ff044400ff00440fff00000fff0fffffff00ffffffd0ffffff00ffffff
 -- 096:0000000000000000000000000000000000000004000000000000000000000000
 -- 097:0000000000000000000000000444444040444004440444004444004404440000
 -- 098:0000000000000000000000000000000000000000400000004000000040000000
@@ -762,7 +789,6 @@ end
 -- 105:0000000000000000000000000000000000004000000044040000044400000444
 -- 106:0000000000000000000000000000000044444440444444444444444444444444
 -- 107:0000000000000000000000000000000000400000044000004400000044000000
--- 110:fffffffffff0000000f000000000000000000000000000000000000000000000
 -- 112:0000000000000000000000000000004400000444000044400000440000444400
 -- 113:0000440000440044440440004040440004040404404040440404040440404000
 -- 114:0000000044000000000000000000000000400000404440004444000044444000
@@ -775,8 +801,6 @@ end
 -- 121:0000004400000000000004440004440000044004004400000044000400440000
 -- 122:4444444444444440040404044044404004444404404440400444440440444040
 -- 123:4000000000000000440000000444000000440000000440000044400004040400
--- 125:00000000ff000000ff000000fffff000ffffff00fffff004fffff044fff00044
--- 126:0000000000000000000000000000000009909900090909040909090409090904
 -- 128:0004440000444000000000000000004400000444000044440000040400000000
 -- 129:0404040044404444440000444400004440000404400000000400000000000000
 -- 130:0044000000044000400000004440000004040000000000000000000000000000
@@ -812,35 +836,45 @@ end
 -- 211:0000000000000000000000000000000000000000000000040000004000000400
 -- 212:0000000000000000000444440444444440000000000000000000000000000000
 -- 213:0000000000000000444000004440000000000044004000440440404004404040
--- 217:000000000000000000000000000000ee0000ee0e000eee0e000eeeee00eeeeee
--- 218:0000000000000000eeeeeeeeeeeeeeeeeeeee00eeeeeeee0eeeeeee0eeeeeeee
--- 219:000000000000000000000000e0000000eee000000eee000000ee0000000ee000
--- 221:0000000000000000000000000000000000000000000000040000004400000044
--- 222:0000000000000000000000000000000000000000444400004444400004044000
+-- 214:000000000000000000000000000000ee0000ee0e000eee0e000eeeee00eeeeee
+-- 215:0000000000000000eeeeeeeeeeeeeeeeeeeee00eeeeeeee0eeeeeee0eeeeeeee
+-- 216:000000000000000000000000e0000000eee000000eee000000ee0000000ee000
+-- 217:ffffffffffffffffffffffffffffffffffffff00fffff004fffff044fffff044
+-- 218:ffffffffffffffffffffffffffffffff00000fff444400ff444440ff040440ff
+-- 219:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+-- 220:ffffffffffffffffffffffffffffffffffffff00fffff004fffff044fffff044
+-- 221:ffffffffffffffffffffffffffffffff00000fff444400ff444440ff040440ff
+-- 222:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
 -- 224:0000040000040400444044000404040004000400040000004444000044444000
 -- 225:0000000000000000000000000000000000000000000000000000000000000004
 -- 226:0400444004044044040400040404040404040440040400004404440044000400
 -- 227:0000400000004000000040000000040004440040440040044040404440440040
 -- 228:0000000000000000000000000000000000000000000000004444444000000040
 -- 229:0440404004404044044044440440404404404040000040404040004000004044
--- 233:00eeeeee0eeeeeee0eeeeeee0eeeeeee0eeeeeee0eeee0ee0eeee0ee00eeee0e
--- 234:e0eeeeee0eeeeeee0eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee
--- 235:00eee000eeeee000eeeeee00eeeeee00eeeeee00eeeeee00eeeeee00eee0e000
--- 237:0000004400000040040400040044000004440099004400090000040900040409
--- 238:4444400000004000000400004440000000099004909900400909044009090440
--- 239:0000000000000000000000004444000000004000400004000040404000000040
+-- 230:00eeeeee0eeeeeee0eeeeeee0eeeeeee0eeeeeee0eeee0ee0eeee0ee00eeee0e
+-- 231:e0eeeeee0eeeeeee0eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee
+-- 232:00eee000eeeee000eeeeee00eeeeee00eeeeee00eeeeee00eeeeee00eee0e000
+-- 233:fffff0440000004004040004004400000444009900440009f0000409ff040409
+-- 234:444440ff000040ff000400ff444000ff000990ff9099000f0909040009090440
+-- 235:ffffffffffffffffffffffffffffffffffffffffffffffffffffffff0fffffff
+-- 236:fffff0440000004004040004004400000444009900440009f0000409ff040409
+-- 237:444440ff000040ff000400ff44400f0000099004909900400909044009090440
+-- 238:ffffffffffffffff00000fff444400ff0000400f400004000040404000000040
 -- 240:4000400040004044004040404040404040404044004040000000444400000444
 -- 241:0000044444440404000444044404440444440444000000444444440044444444
 -- 242:4404040004040400040404000404040044040400400404000444000044000000
 -- 243:4400044004400444004400440004400000004440000004440000000000000000
 -- 244:4444404004444040400000404444444000000000444444440000000000000000
 -- 245:4040004400004000404000000400400000040000444000000000000000000000
--- 249:00eeee0e000eee0e000eeee00000eeee00000eee0000000e0000000000000000
--- 250:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeee0eeeeeeeeeeeeeeee0eeeeee000000000
--- 251:ee0ee000ee0e0000e0ee00000ee00000ee000000000000000000000000000000
--- 253:00000409000000090000000900000009000000000000000d00000000000000dd
--- 254:09090040090900449099000400090000d0d00000000d0000d0d00000d0ddd000
--- 255:4004004000000040444444004400000000000000000000000000000000000000
+-- 246:00eeee0e000eee0e000eeee00000eeee00000eee0000000e0000000000000000
+-- 247:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeee0eeeeeeeeeeeeeeee0eeeeee000000000
+-- 248:ee0ee000ee0e0000e0ee00000ee00000ee000000000000000000000000000000
+-- 249:ff000409ffff0009ffffff09ffffff09ffffff00ffffff0dfffff000fffff0dd
+-- 250:090900440909000490990f0400090f04d0d00f04000d0f00d0d000ffd0ddd0ff
+-- 251:00000fff44440fff44000fff4040ffff0400ffff000fffffffffffffffffffff
+-- 252:ff000409ffff0009ffffff09ffffff09ffffff00ffffff0dfffff000fffff0dd
+-- 253:09090040090900449099000400090f00d0d00fff000d0fffd0d000ffd0ddd0ff
+-- 254:4004004000000040444444004400000f000fffffffffffffffffffffffffffff
 -- </SPRITES>
 
 -- <MAP>
