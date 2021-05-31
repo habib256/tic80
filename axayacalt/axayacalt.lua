@@ -19,7 +19,7 @@ monster = {
 }
 
 game = {
-	state = 2,
+	state = 1,
 	init = -1
 }
 
@@ -337,7 +337,7 @@ function drawMapSprite(val,i,j)
  -- Mine
  if val == 18 then spr(115,i*24,j*24,-1,1,0,0,3,3) end
  -- Boulder
- if val == 19 then spr(29,i*24,j*24,-1,1,0,0,3,3) end
+ if val == 19 then spr(473,i*24,j*24,-1,1,0,0,3,3) end
  -- Little Chest
  if val == 20 then spr(121,i*24,j*24+8,-1,1,0,0,3,2) end
  -- Little Chest Open
