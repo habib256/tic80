@@ -17,7 +17,7 @@ monster = {
 }
 
 game = {
-	state = 1,
+	state = 0,
 	init = -1,
 	time = 0
 }
