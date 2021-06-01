@@ -4,10 +4,8 @@
 -- graphics: 24x24 tiles & sprites by Petitjean & Shurder
 -- script: lua
 
-t=0
-
 camera = {
-	x=0,y=0,px,py
+	x=0,y=0,
 }
 
 player = {
@@ -32,12 +30,11 @@ game.time = game.time +1
  if game.state == 0 then attractMode() end
  if game.state == 1 then solo() end
  if game.state == 2 then arena() end
-	 
 end
+
 
 -- FLYBY
 -- -------------------------
-
 function flyBy()
  cls(0)
  if btn(0) then camera.y = camera.y - 1 end
@@ -57,7 +54,6 @@ end
 
 -- ATTRACT MODE
 -- --------------------------
-
 function initAttract()
  player.x = 80
  player.y = 11
@@ -67,7 +63,6 @@ function initAttract()
  monster.dir = 0
  camera.x = 72
  camera.y = 8
-
 end
 
 function attractMode()
@@ -137,11 +132,9 @@ function solo()
 end
 
 
--- INPUTS
+-- PLAYER INPUT & UPDATE
 -- ----------------------
-
 function updatePlayer()
-
  -- Very important player state update for water and aiming
  player.state = 0
  if btn(7) then player.state = 2 end  -- Shoot Button
@@ -175,9 +168,8 @@ function updatePlayer()
 	player.dir = 1
    if playerCanMove(player.x+1,player.y) == 1 then
 	   player.x = player.x +1
-	 end
 	end
-
+  end
 end
 
 function playerCanMove (x,y)
@@ -202,6 +194,8 @@ function isWater (x,y)
    end
 end
 
+-- MONSTERS UPDATE
+-- ----------------------
 function updateMonster()
  if monster.x < 73 then
 	 monster.dir = 0
@@ -226,12 +220,9 @@ function monsterCanMove (x,y)
    end
 
 
--- SPRITE  ANIMATION
+-- DRAW PLAYER
 -- -----------------------------
-
 function drawPlayer()
-
-	-- print(game.time%60//30,75,1*24+6,10,2,2)
 
  if player.state == 0 then -- Normal walking state
   -- En Face
@@ -240,20 +231,20 @@ function drawPlayer()
    spr(271,(player.x-camera.x)*24+8,(player.y-camera.y)*24+4,15,1,0,0,1,1)
   end
   -- Vers le haut
-  if player.dir == 0 then spr(304+game.time%60//30*3,(player.x-camera.x)*24,(player.y-camera.y)*24,15,1,0,0,3,3)  end
+  if player.dir == 0 then spr(304+game.time%30//15*3,(player.x-camera.x)*24,(player.y-camera.y)*24,15,1,0,0,3,3)  end
   -- vers la droite	
-  if player.dir == 1 then spr(259+game.time%60//30*3,(player.x-camera.x)*24,(player.y-camera.y)*24,15,1,0,0,3,3)  end	
+  if player.dir == 1 then spr(259+game.time%30//15*3,(player.x-camera.x)*24,(player.y-camera.y)*24,15,1,0,0,3,3)  end	
    -- Vers le bas 
-  if player.dir == 2 then spr(304+game.time%60//30*3,(player.x-camera.x)*24,(player.y-camera.y)*24,15,1,0,0,3,3)
+  if player.dir == 2 then spr(304+game.time%30//15*3,(player.x-camera.x)*24,(player.y-camera.y)*24,15,1,0,0,3,3)
     spr(271,(player.x-camera.x)*24+8,(player.y-camera.y)*24+4,15,1,0,0,1,1)
   end	
   -- Ver la gauche
-  if player.dir == 3 then spr(259+game.time%60//30*3,(player.x-camera.x)*24,(player.y-camera.y)*24,15,1,1,0,3,3) end	
+  if player.dir == 3 then spr(259+game.time%30//15*3,(player.x-camera.x)*24,(player.y-camera.y)*24,15,1,1,0,3,3) end	
 end
  if player.state == 1 then -- Swimming mode
-	if player.dir == -1 then spr(265+game.time%60//30*3,(player.x-camera.x)*24,(player.y-camera.y)*24,15,1,0,0,3,3)
-	  spr(271,(player.x-camera.x)*24+9,(player.y-camera.y)*24+3+game.time%60//30,15,1,0,0,1,1) end	
-  if player.dir >= 0 then spr(265+game.time%60//30*3,(player.x-camera.x)*24,(player.y-camera.y)*24,15,1,0,player.dir,3,3) end	
+	if player.dir == -1 then spr(265+game.time%30//15*3,(player.x-camera.x)*24,(player.y-camera.y)*24,15,1,0,0,3,3)
+	  spr(271,(player.x-camera.x)*24+9,(player.y-camera.y)*24+3+game.time%30//15,15,1,0,0,1,1) end	
+  if player.dir >= 0 then spr(265+game.time%30//15*3,(player.x-camera.x)*24,(player.y-camera.y)*24,15,1,0,player.dir,3,3) end	
 end
  if player.state == 2 then --Aiming mode
 	if player.dir == -1 then spr(256,(player.x-camera.x)*24,(player.y-camera.y)*24,15,1,0,0,3,3) 
@@ -267,13 +258,14 @@ end
 end
    
 
+-- DRAW MONSTERS
+-- -----------------------------
 function drawMonster()
-  spr(352+t%60//30*3,(monster.x-camera.x)*24,(monster.y-camera.y)*24,0,1,monster.dir,0,3,3)
+  -- print(game.time%30//15,75,2*24,10,2,2)
+  spr(352+game.time%30//15*3,(monster.x-camera.x)*24,(monster.y-camera.y)*24,0,1,monster.dir,0,3,3)
 end
    
-
-
--- SPRITE  DRAWING
+-- DRAW MAP
 -- -----------------------------
 function drawMap(x,y) -- draw 64x64 Sprite Map
 	x = toInt(x)
@@ -287,10 +279,8 @@ function drawMap(x,y) -- draw 64x64 Sprite Map
  end
 end
 
-
--- FONCTIONS D'AFFICHAGE
+-- DRAW SPRITES
 -- --------------------------------------------------
-
 function drawMapSprite(val,i,j)
  -- Wall 1 
  if val == 1 then spr(65,i*24,j*24,-1,1,0,0,3,3) end
@@ -353,7 +343,7 @@ function drawMapSprite(val,i,j)
  if val == 48 then 
 	spr(72,i*24,j*24,-1,1,0,1,1,3) 
 	spr(72,i*24,j*24+8,-1,1,0,1,2,3) 
-   end
+ end
  -- Mine
  if val == 18 then spr(115,i*24,j*24,-1,1,0,0,3,3) end
  -- Boulder
@@ -371,22 +361,22 @@ function drawMapSprite(val,i,j)
  if val == 33 then 
 	spr(211,i*24,j*24,-1,1,0,0,3,3)
 	spr(223,i*24+8,j*24+8,-1,1,0,0,1,1) 
-end
+ end
  -- Green Door
  if val == 34 then
 	spr(211,i*24,j*24,-1,1,0,0,3,3)
- spr(239,i*24+8,j*24+8,-1,1,0,0,1,1) 
-end
+    spr(239,i*24+8,j*24+8,-1,1,0,0,1,1) 
+ end
  -- Blue Door
-if val == 35 then 
+ if val == 35 then 
 	spr(211,i*24,j*24,-1,1,0,0,3,3)
 	spr(255,i*24+8,j*24+8,-1,1,0,0,1,1) 
-end 
+ end 
  -- Yellow Door
  if val == 36 then 
 	spr(211,i*24,j*24,-1,1,0,0,3,3) 
-end 
--- Spacechip way
+ end 
+ -- Spacechip way
  if val == 38 then
    spr(188,i*24,j*24,-1,1,0,0,3,1)
    spr(188,i*24,j*24+16,-1,1,0,2,3,1)
@@ -408,7 +398,6 @@ end
  if val == 239 then spr(val,i*24+8,j*24+8,-1,1,0,0,1,1) end
   -- Blue Key
  if val == 255 then spr(val,i*24+8,j*24+8,-1,1,0,0,1,1) end
-
  -- Big Arch	  
  if val == 55 then 
 	spr(74,i*24-24+3,j*24-24,-1,1,0,0,4,3)
@@ -416,18 +405,15 @@ end
 	spr(124,i*24-15,j*24,-1,1,1,0,2,3)
 	spr(124,i*24+22,j*24,-1,1,1,0,2,3)
  end
- 
-  -- SpaceShip Control	  
+ -- SpaceShip Control	  
  if val == 80 then 
 	spr(172,i*24+5,j*24-24+8,-1,1,0,0,2,1)
 	spr(217,i*24,j*24,-1,1,1,0,3,3)
  end
- 
 end
 
 
-
--- FONCTION UTILITAIRE
+-- FONCTION UTILITAIRES
 -- -------------------------------
 function toInt(n)
     local s = tostring(n)
@@ -721,7 +707,7 @@ end
 -- 033:09090900099099040900090000d0d0000d000d0f00d0d000ddd0ddd000000000
 -- 034:4440ffff4400ffff440fffff000fffffffffffffffffffffffffffffffffffff
 -- 035:ff000400ffff0000ffffff0dffffff0dffffff0dffffff00ffffffffffffffff
--- 036:0909000f09090d0fd0d0d0000d0d0d0d0000d0dd0ff00dd0ffff0000ffffffff
+-- 036:0909090f0909090fd0d0d0000d0d0d0d0000d0dd0ff00dd0ffff0000ffffffff
 -- 037:ffffffffffffffff0fffffff0fffffff0fffffff0fffffffffffffffffffffff
 -- 038:fffffff0fffffff0fffffff0ffffff00ffffff0dffffff0dffffff0dffffff00
 -- 039:4409090404090900d0d0d0d00d000d00d000d0000000ddd0dd000000000fffff
