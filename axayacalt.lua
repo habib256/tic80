@@ -69,10 +69,10 @@ end
 function drawWelcome()
   print("Axayacalt's", 75, 1 * 24 + 6, 10, 2, 2)
   print("Tomb", 125, 2 * 24, 10, 2, 2)
-  print("A TIC-80 game by gist974", 50, 5 * 24 + 2, 1,
-        1, 1)
-  print("Graphics: Petitjean & Shurder", 35,
-        5 * 24 + 10, 1, 1, 1)
+  print("A TIC-80 game by gist974", 50, 5 * 24 + 2, 1, 1,
+        1)
+  print("Graphics: Petitjean & Shurder", 35, 5 * 24 + 10,
+        1, 1, 1)
 end
 
 -- ARENA
@@ -171,10 +171,10 @@ end
 
 function playerCanMove(x, y)
   val = mget(x, y)
-  if val == 1 or val == 2 or val == 3 or val == 39 or
-    val == 10 or val == 11 or val == 12 or val == 23 or
-    val == 15 or val == 17 or val == 20 or val == 21 or
-    val == 22 or val == 37 or val == 18 then
+  if val == 1 or val == 2 or val == 3 or val == 39 or val ==
+    10 or val == 11 or val == 12 or val == 23 or val == 15 or
+    val == 17 or val == 20 or val == 21 or val == 22 or
+    val == 37 or val == 18 then
     return -1
   else
     if player.state == 2 then
@@ -205,10 +205,9 @@ end
 
 function monsterCanMove(x, y)
   val = mget(x, y)
-  if val == 1 or val == 2 or val == 3 or val == 39 or
-    val == 12 or val == 23 or val == 15 or val == 17 or
-    val == 20 or val == 21 or val == 22 or val == 37 or
-    val == 18 then
+  if val == 1 or val == 2 or val == 3 or val == 39 or val ==
+    12 or val == 23 or val == 15 or val == 17 or val == 20 or
+    val == 21 or val == 22 or val == 37 or val == 18 then
     return -1
   else
     return 1
@@ -225,8 +224,8 @@ function drawPlayer()
       spr(256, (player.x - camera.x) * 24,
           (player.y - camera.y) * 24, 15, 1, 0, 0, 3, 3)
       spr(271, (player.x - camera.x) * 24 + 8,
-          (player.y - camera.y) * 24 + 4, 15, 1, 0, 0,
-          1, 1)
+          (player.y - camera.y) * 24 + 4, 15, 1, 0, 0, 1,
+          1)
     end
     -- Vers le haut
     if player.dir == 0 then
@@ -246,8 +245,8 @@ function drawPlayer()
           (player.x - camera.x) * 24,
           (player.y - camera.y) * 24, 15, 1, 0, 0, 3, 3)
       spr(271, (player.x - camera.x) * 24 + 8,
-          (player.y - camera.y) * 24 + 4, 15, 1, 0, 0,
-          1, 1)
+          (player.y - camera.y) * 24 + 4, 15, 1, 0, 0, 1,
+          1)
     end
     -- Ver la gauche
     if player.dir == 3 then
@@ -262,8 +261,8 @@ function drawPlayer()
           (player.x - camera.x) * 24,
           (player.y - camera.y) * 24, 15, 1, 0, 0, 3, 3)
       spr(271, (player.x - camera.x) * 24 + 9,
-          (player.y - camera.y) * 24 + 3 + game.time %
-            30 // 15, 15, 1, 0, 0, 1, 1)
+          (player.y - camera.y) * 24 + 3 + game.time % 30 //
+            15, 15, 1, 0, 0, 1, 1)
     end
     if player.dir >= 0 then
       spr(265 + game.time % 30 // 15 * 3,
@@ -277,8 +276,8 @@ function drawPlayer()
       spr(256, (player.x - camera.x) * 24,
           (player.y - camera.y) * 24, 15, 1, 0, 0, 3, 3)
       spr(271, (player.x - camera.x) * 24 + 9,
-          (player.y - camera.y) * 24 + 4, 15, 1, 0, 0,
-          1, 1)
+          (player.y - camera.y) * 24 + 4, 15, 1, 0, 0, 1,
+          1)
     end
     if player.dir == 0 then
       spr(313, (player.x - camera.x) * 24,
@@ -488,16 +487,16 @@ function drawMapSprite(val, i, j)
   end
   -- Big Arch	  
   if val == 55 then
-    spr(74, i * 24 - 24 + 3, j * 24 - 24, -1, 1, 0, 0,
-        4, 3)
+    spr(74, i * 24 - 24 + 3, j * 24 - 24, -1, 1, 0, 0, 4,
+        3)
     spr(74, i * 24 + 11, j * 24 - 24, -1, 1, 1, 0, 4, 3)
     spr(124, i * 24 - 15, j * 24, -1, 1, 1, 0, 2, 3)
     spr(124, i * 24 + 22, j * 24, -1, 1, 1, 0, 2, 3)
   end
   -- SpaceShip Control	  
   if val == 80 then
-    spr(172, i * 24 + 5, j * 24 - 24 + 8, -1, 1, 0, 0,
-        2, 1)
+    spr(172, i * 24 + 5, j * 24 - 24 + 8, -1, 1, 0, 0, 2,
+        1)
     spr(217, i * 24, j * 24, -1, 1, 1, 0, 3, 3)
   end
 end
