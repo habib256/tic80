@@ -4,10 +4,13 @@
 -- graphics: 24x24 tiles & sprites by Petitjean & Shurder
 -- script: lua
 
-game = {state = 0, init = -1, time = 0}
+game = {state = 1, init = -1, time = 0}
 camera = {x = 0, y = 0}
 player = {x, y, dir, state, live}
 monster = {x, y, dir}
+monsters = nil
+
+
 
 -- FONCTION PRINCIPALE
 -- --------------------
@@ -17,6 +20,43 @@ function TIC()
   if game.state == 0 then attractMode() end
   if game.state == 1 then solo() end
   if game.state == 2 then arena() end
+  if game.state == 3 then test() end
+end
+
+-- INIT FROM MAP
+-- --------------------
+
+function test()
+  if game.init == -1 then
+    initFromMap(67,15,20,20)
+    game.init = 1
+  end
+  if game.time%30 == 0 then
+   print(countMonsters(),75,2*24,10,2,2)
+  end
+end
+
+function initFromMap(x,y, w, h)
+  for i=x,x+w do 
+    for j=y,y+h do
+      val = peek(0x08000 + (i + x) + (j + y) * 240)
+      if val == 49 then
+        monster.x = x+i
+        monster.y = y+j
+        monster.dir = 0
+        monsters = {next = monsters, value = monster}
+      end
+    end
+  end
+end
+
+function countMonsters()
+  local n = 0
+  local m = monsters
+  while m do
+    n = n + 1
+  end
+  print(n)
 end
 
 -- FLYBY
