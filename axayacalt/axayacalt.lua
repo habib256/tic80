@@ -2,9 +2,9 @@
 -- author: VERHILLE Arnaud - gist974@gmail.com
 -- desc: Axayacalt's Tomb for TIC-80
 -- graphics: 24x24 tiles & sprites by Petitjean & Shurder
--- script: lua
+-- script: Lua
 
-game = {state = 1, init = -1, time = 0}
+game = {state = 2, init = -1, time = 0}
 camera = {x = 0, y = 0}
 player = {x, y, dir, state, live}
 monster = {x, y, dir}
@@ -37,12 +37,12 @@ function test()
 end
 
 function initFromMap(x,y, w, h)
-  for i=x,x+w do 
-    for j=y,y+h do
-      val = peek(0x08000 + (i + x) + (j + y) * 240)
+  for i=67,87 do 
+    for j=15,35 do
+      val = peek(0x08000 + (i) + (j) * 240)
       if val == 49 then
-        monster.x = x+i
-        monster.y = y+j
+        monster.x = i
+        monster.y = j
         monster.dir = 0
         monsters = {next = monsters, value = monster}
       end
@@ -54,9 +54,11 @@ function countMonsters()
   local n = 0
   local m = monsters
   while m do
+   -- visit m.value
+    m = m.next
     n = n + 1
   end
-  print(n)
+  return n
 end
 
 -- FLYBY
