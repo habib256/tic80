@@ -5,7 +5,7 @@
 -- script: Lua
 
 input = -1
-game = {state = 1 , init = -1, time = 0}
+game = {state =  2, init = -1, time = 0}
 camera = {x = 0, y = 0, px, py}
 -- player.state : 0 -> wait // 1 -> walk // 2 -> swim // 3 -> Aim
 player = {x, y, dir, state = 0, life = 12}
@@ -28,12 +28,12 @@ function playMap(x1,y1,x2,y2)
     game.init = 1
   end
   
+  checkInteraction()
+
   updateMonster()
   updatePlayer()
   updateCamera()
-
-  checkInteraction()
-  
+ 
   cls(0)
   drawMap(camera.x, camera.y)
   drawPlayer()
@@ -81,7 +81,16 @@ function flyBy()
 end
 
 function checkInteraction()
+  local m = monsters
+  while m do
 
+    if m.x == player.x then
+      if m.y == player.y then
+        player.life = player.life - 1
+      end
+    end
+    m = m.next
+  end
 end
 
 function updateCamera()  
