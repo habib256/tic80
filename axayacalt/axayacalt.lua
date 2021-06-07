@@ -10,7 +10,7 @@ player = {x, y, dir, state = 0, life = 10, O2 = 300}
 monsters = nil -- This a Lua Linked List
 camera = {x = 0, y = 0}
 input = -1
-game = {state = 1, init = -1, time = 0}
+game = {state = 3, init = -1, time = 0}
 
 -- --------------------
 -- FONCTION PRINCIPALE
@@ -29,15 +29,28 @@ function playMap(x1, y1, x2, y2)
         initFromMap(x1, y1, x2, y2)
         game.init = 1
     end
-    updateMonster()
-    updatePlayer()
-    updateCamera()
-    checkInteraction()
-    cls(0)
-    drawMap(camera.x, camera.y)
-    drawPlayer()
-    drawMonsters()
-    drawHUD()
+    if player.state == 5 then -- INVENTORY MODE
+        cls(0)
+        drawMap(camera.x, camera.y)
+        drawMonsters()
+        drawHUD()
+        drawPlayer()
+        if btn(6) then -- Triangle
+            input = 6
+            player.state = 0
+        end
+    else -- PLAYING MODE
+        updateMonster()
+        updatePlayer()
+        updateCamera()
+        checkInteraction()
+        cls(0)
+        drawMap(camera.x, camera.y) 
+        drawPlayer()
+        drawMonsters()
+        drawHUD()
+
+    end
 end
 
 -- INIT FROM MAP
@@ -346,6 +359,14 @@ function drawPlayer()
                 1, 1, 0, 3, 3)
         end
     end
+
+    if player.state == 5 then -- INVENTORY WINDOW DRAW
+        -- En Face
+        spr(256, 3 * 24, (player.y - camera.y) * 24, 15, 1,
+            0, 0, 3, 3)
+        spr(271, 3  * 24 + 8, (player.y - camera.y) * 24 + 4,
+            15, 1, 0, 0, 1, 1)
+    end
 end
 
 -- -----------------------------
@@ -390,15 +411,40 @@ function drawHUD()
         print("A TIC-80 game by gist974", 50, 5 * 24 + 2, 1, 1, 1)
         print("Graphics: Petitjean & Shurder", 35, 5 * 24 + 10, 1, 1, 1)
     else -- INGAME HUD
+        if player.state == 5 then -- Show HUD O5 only in Inventory
+            rect(2*24, 1*24, 6*24, 4*24, 8) -- Main Rect
+            rectb(2*24, 1*24, 6*24, 4*24, 12)
+
+            rect(2*24+12, 1*24+8, 19, 7, 1) -- HUD Life
+            spr(26, 2*24+6, 1*24+8, 15, 1, 0, 0, 1, 1)
+            print(player.life, 2*24+16, 1*24+9, 12, 1, 1)
+    
+            rect(3*24+18, 1*24+8, 24, 7, 1) -- HUD O2
+            spr(25, 3*24+12, 1*24+8, 15, 1, 0, 0, 1, 1)
+            print(player.O2, 3*24+22, 1*24+9, 12, 1, 1)
+
+            print("Keys", 5*24, 1*24+9, 12, 1, 1)  
+            spr(223, 5*24, 1*24+18, 12, 1, 1)
+            spr(239, 5*24+8, 1*24+18, 12, 1, 1)
+            spr(255, 5*24+16, 1*24+18, 12, 1, 1)
+            spr(207, 6*24, 1*24+18, 12, 1, 1)
+
+            print("Gold", 5*24, 2*24+14, 12, 1, 1)
+            spr(126, 5*24, 3*24, 12, 1, 1,0,2,2)
+
+            print(" Artefact", 2*24, 3*24+8, 12, 1, 1)
+
+        else
         -- HUD Life
         rect(211, 3, 19, 7, 1)
         spr(26, 208, 2, 15, 1, 0, 0, 1, 1)
         print(player.life, 218, 4, 12, 1, 1)
 
-        if player.state == 2 then -- Show HUD O2 only if swimming
+         if player.state == 2 then -- Show HUD O2 only if swimming
             rect(211, 13, 25, 7, 1)
             spr(25, 208, 12, 15, 1, 0, 0, 1, 1)
             print(player.O2, 218, 14, 12, 1, 1)
+          end
         end
     end
 end
@@ -599,7 +645,7 @@ function lerp(a, b, mu) return a * (1 - mu) + b * mu end
 -- 022:0000000000444400044444400440044004444440044444400444444000000000
 -- 023:0000000000000000004004000044440000444400000440000004400000444400
 -- 025:f9aaaa9f9aa99aa99a999ccc9a999cac9a9999ac9aa99ac999aaac99f9999ccc
--- 026:f00f00ff0220220f2222222022222c202222c2200222220ff02220ffff020fff
+-- 026:f00000ff0220220f2222222022222c202222c2200222220ff02220ffff020fff
 -- 027:000000000000000000000000000000000000000000000fff0000ffff0000ff00
 -- 028:0000000000000000000000000000000000000000ffffffffffffffff00000000
 -- 029:0000000000000000000000000000000000000000ffffffffffffffff00000000
