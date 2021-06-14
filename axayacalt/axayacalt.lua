@@ -147,12 +147,35 @@ end
 -- PLAYER UPDATE with INPUTS
 -- ---------------------------------
 function updatePlayer()
-  -- Important player state update for doing nothing after a time
-  if game.time % 60 == 0 then player.state = 0 end -- Wait
 
-  -- Mouvement
+  if btnp(6) then -- Triangle
+    input = 6
+    player.state = 5 -- Inventory
+  end
+  
+  -- Important!! player speed !
+if game.time % 15 == 0 then
+
+  player.state = 0
+
+if btn(7) then -- Shoot Button Carre
+    input = 7
+    player.state = 3 -- Aiming
+    move = 0
+end
+
+if btn(5) then
+  input = 5
+  player.state = 3 -- Aiming Cercle
+end
+
+if btn(4) then
+  input = 4
+  player.state = 4 -- Jump Croix
+end
+
   -- Avance vers le haut
-  if btnp(0) then
+  if btn(0) then
     input = 0
     player.dir = 0
     if playerCanMove(player.x, player.y - 1) == 1 then
@@ -161,7 +184,7 @@ function updatePlayer()
     end
   end
   -- Avance vers le bas
-  if btnp(1) then
+  if btn(1) then
     input = 1
     player.dir = 2
     if playerCanMove(player.x, player.y + 1) == 1 then
@@ -170,7 +193,7 @@ function updatePlayer()
     end
   end
   -- Avance vers la gauche
-  if btnp(2) then
+  if btn(2) then
     input = 2
     player.dir = 3
     if playerCanMove(player.x - 1, player.y) == 1 then
@@ -179,7 +202,7 @@ function updatePlayer()
     end
   end
   -- Avance vers la droite
-  if btnp(3) then
+  if btn(3) then
     input = 4
     player.dir = 1
     if playerCanMove(player.x + 1, player.y) == 1 then
@@ -188,25 +211,7 @@ function updatePlayer()
     end
   end
 
-  if btnp(4) then
-    input = 4
-    player.state = 4 -- Jump Croix
-  end
 
-  if btnp(5) then
-    input = 5
-    player.state = 3 -- Aiming Cercle
-  end
-
-  if btnp(6) then -- Triangle
-    input = 6
-    player.state = 5 -- Inventory
-  end
-
-  if btnp(7) then -- Shoot Button Carre
-    input = 7
-    player.state = 3 -- Aiming
-  end
 
   -- if WATER you have to SWIM
   if isWater(player.x, player.y) == 1 then
@@ -224,6 +229,8 @@ function updatePlayer()
   if mget(player.x, player.y + 1) == 7 then
     player.life = 0
   end
+
+end -- Wait
 
 end
 
