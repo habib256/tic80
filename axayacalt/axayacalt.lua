@@ -21,7 +21,7 @@ player = {
 monsters = nil -- This a Lua Linked List
 camera = {x = 0, y = 0}
 input = -1
-game = {state = 4, init = -1, time = 0}
+game = {state = 1, init = -1, time = 0}
 
 -- --------------------
 -- FONCTION PRINCIPALE
@@ -156,7 +156,7 @@ function updatePlayer()
     input = 6
     player.state = 5 -- Inventory
   end
-  
+
   -- Important!! player speed !
 if game.time % 15 == 0 then
 
