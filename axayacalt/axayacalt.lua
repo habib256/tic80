@@ -77,28 +77,37 @@ function initFromMap(x1, y1, x2, y2)
                 player.y = j
                 player.dir = -1
             end
+            if val == 2 then -- SECRET WALL
+                doors = {next = doors, x = i, y = j, color = "wall", open = 0}
+            end
             if val == 33 then -- RED DOOR
-                doors = {next = doors, x = i, y = j, color = red, open = 0}
+                doors = {next = doors, x = i, y = j, color = "red", open = 0}
             end
             if val == 34 then -- GREEN DOOR
-                doors = {next = doors, x = i, y = j, color = green, open = 0}
+                doors = {next = doors, x = i, y = j, color = "green", open = 0}
             end
             if val == 35 then -- BLUE DOOR
-                doors = {next = doors, x = i, y = j, color = blue, open = 0}
+                doors = {next = doors, x = i, y = j, color = "blue", open = 0}
             end
             if val == 36 then -- YELLOW DOOR
-                doors = {next = doors, x = i, y = j, color = yellow, open = 0}
+                doors = {next = doors, x = i, y = j, color = "yellow", open = 0}
             end
 
             if val == 20 then -- LITTLE CHEST CLOSED
-                chests = {next = chests, x = i, y = j, inside = heart, open = 0}
+                chests = {
+                    next = chests,
+                    x = i,
+                    y = j,
+                    inside = "heart",
+                    open = 0
+                }
             end
             if val == 21 then -- LITTLE CHEST OPEN
                 chests = {
                     next = chests,
                     x = i,
                     y = j,
-                    inside = nothing,
+                    inside = "nothing",
                     open = 1
                 }
             end
@@ -107,7 +116,7 @@ function initFromMap(x1, y1, x2, y2)
                     next = chests,
                     x = i,
                     y = j,
-                    inside = nothing,
+                    inside = "nothing",
                     open = 0
                 }
             end
@@ -244,7 +253,11 @@ function updatePlayer()
         end
 
         -- if PEAK and not jumping -> Dead
-        if mget(player.x, player.y + 1) == 7 then player.life = 0 end
+        if mget(player.x, player.y + 1) == 7  then 
+          if player.state == 4 then else
+          player.life = 0
+          end
+         end
 
     end -- Wait
 
@@ -360,6 +373,19 @@ function monsterCanMove(x, y)
         val == 14 then
         return 0
     else
+        if val == 33 or val == 34 or val == 35 or val == 36 then
+            local d = doors
+            while d do
+                if d.x == x and d.y == y then
+                    if d.open == 1 then
+                        return 1
+                    else
+                        return 0
+                    end
+                end
+                d = d.next
+            end
+        end
         return 1
     end
 end
@@ -400,7 +426,7 @@ function drawPlayer()
             spr(271, (player.x - camera.x) * 24 + 8,
                 (player.y - camera.y) * 24 + 4, 15, 1, 0, 0, 1, 1)
         end
-        -- Ver la gauche
+        -- Vers la gauche
         if player.dir == 3 then
             spr(259 + game.time % 30 // 15 * 3, (player.x - camera.x) * 24,
                 (player.y - camera.y) * 24, 15, 1, 1, 0, 3, 3)
@@ -577,6 +603,48 @@ function drawMap(x, y) -- draw 64x64 Sprite Map
             drawMapSprite(val, i, j)
         end
     end
+    drawDoors(x, y)
+end
+
+function drawDoors(x, y)
+    local d = doors
+    while d do
+        if d.open == 0 then
+            if d.color == "green" then
+                spr(211, (d.x - camera.x) * 24, (d.y - camera.y) * 24, -1, 1, 0,
+                    0, 3, 3)
+                spr(239, (d.x - camera.x) * 24 + 8, (d.y - camera.y) * 24 + 8,
+                    -1, 1, 0, 0, 1, 1)
+            end
+            if d.color == "blue" then
+                spr(211, (d.x - camera.x) * 24, (d.y - camera.y) * 24, -1, 1, 0,
+                    0, 3, 3)
+                spr(255, (d.x - camera.x) * 24 + 8, (d.y - camera.y) * 24 + 8,
+                    -1, 1, 0, 0, 1, 1)
+            end
+            if d.color == "red" then
+                spr(211, (d.x - camera.x) * 24, (d.y - camera.y) * 24, -1, 1, 0,
+                    0, 3, 3)
+                spr(223, (d.x - camera.x) * 24 + 8, (d.y - camera.y) * 24 + 8,
+                    -1, 1, 0, 0, 1, 1)
+            end
+            if d.color == "yellow" then
+                spr(211, (d.x - camera.x) * 24, (d.y - camera.y) * 24, -1, 1, 0,
+                    0, 3, 3)
+                spr(207, (d.x - camera.x) * 24 + 8, (d.y - camera.y) * 24 + 8,
+                    -1, 1, 0, 0, 1, 1)
+            end
+            if d.color == "wall" then
+                -- Secret Wall
+                spr(65, (d.x - camera.x) * 24, (d.y - camera.y) * 24, -1, 1, 0,
+                    0, 3, 3)
+                spr(2, (d.x - camera.x) * 24 + 8, (d.y - camera.y) * 24 + 8, -1,
+                    1, 0, 0, 1, 1)
+
+            end
+        end
+        d = d.next
+    end
 end
 
 -- DRAW SPRITES
@@ -584,11 +652,6 @@ end
 function drawMapSprite(val, i, j)
     -- Wall 1 
     if val == 1 then spr(65, i * 24, j * 24, -1, 1, 0, 0, 3, 3) end
-    -- Secret Wall 1
-    if val == 2 then
-        spr(65, i * 24, j * 24, -1, 1, 0, 0, 3, 3)
-        spr(2, i * 24 + 8, j * 24 + 8, -1, 1, 0, 0, 1, 1)
-    end
     -- Wall 2 
     if val == 3 then spr(68, i * 24, j * 24, -1, 1, 0, 0, 3, 3) end
     -- Stairs left
@@ -657,33 +720,7 @@ function drawMapSprite(val, i, j)
 
     -- Pretty Statue
     if val == 23 then spr(126, i * 24 + 4, j * 24 + 8, -1, 1, 0, 0, 2, 2) end
-    -- Red Door
-    if val == 33 then
-        if player.redKey == 0 then
-            spr(211, i * 24, j * 24, -1, 1, 0, 0, 3, 3)
-            spr(223, i * 24 + 8, j * 24 + 8, -1, 1, 0, 0, 1, 1)
-        end
-    end
-    -- Green Door
-    if val == 34 then
-        if player.greenKey == 0 then
-            spr(211, i * 24, j * 24, -1, 1, 0, 0, 3, 3)
-            spr(239, i * 24 + 8, j * 24 + 8, -1, 1, 0, 0, 1, 1)
-        end
-    end
-    -- Blue Door
-    if val == 35 then
-        if player.blueKey == 0 then
-            spr(211, i * 24, j * 24, -1, 1, 0, 0, 3, 3)
-            spr(255, i * 24 + 8, j * 24 + 8, -1, 1, 0, 0, 1, 1)
-        end
-    end
-    -- Yellow Door
-    if val == 36 then
-        if player.yellowKey == 0 then
-            spr(211, i * 24, j * 24, -1, 1, 0, 0, 3, 3)
-        end
-    end
+
     -- Spacechip way
     if val == 38 then
         spr(188, i * 24, j * 24, -1, 1, 0, 0, 3, 1)
