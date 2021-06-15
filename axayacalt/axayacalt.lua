@@ -19,6 +19,8 @@ player = {
   yellowKey = 0
 }
 monsters = nil -- This a Lua Linked List
+doors = nil -- This a Lua Linked List
+chests = nil -- This a Lua Linked List
 camera = {x = 0, y = 0}
 input = -1
 game = {state = 5, init = -1, time = 0}
@@ -444,6 +446,27 @@ function drawPlayer()
           (player.y - camera.y) * 24, 15, 1, 1, 0, 3, 3)
     end
   end
+
+  if player.state == 4  then -- JUMP
+    -- En Face
+    if player.dir == 0 then
+      spr(412, (player.x - camera.x) * 24, (player.y - camera.y) * 24-2, 15, 1,
+      0, 0, 3, 3)
+    end
+    if player.dir == 1 then
+      spr(364, (player.x - camera.x) * 24, (player.y - camera.y) * 24-2, 15, 1,
+      0, 0, 3, 3)
+    end
+    if player.dir == 2 then
+      spr(412, (player.x - camera.x) * 24, (player.y - camera.y) * 24-2, 15, 1,
+      0, 0, 3, 3)
+    end
+    if player.dir == 3 then
+      spr(364, (player.x - camera.x) * 24, (player.y - camera.y) * 24-2, 15, 1,
+      1, 0, 3, 3)
+    end
+  end
+  
 
   if player.state == 5 then -- INVENTORY WINDOW DRAW
     -- En Face
