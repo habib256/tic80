@@ -182,7 +182,7 @@ function updatePlayer()
         player.state = 5 -- Inventory
         -- if attractmode then run original game
         if game.state == 0 then
-            game.state = 1
+            game.state = 5
             game.init = -1
         end
     end
@@ -192,12 +192,6 @@ function updatePlayer()
 
         player.state = 0
 
-        if btn(7) then -- Shoot Button Carre
-            input = 7
-            player.state = 3 -- Aiming
-            move = 0
-        end
-
         if btn(5) then
             input = 5
             player.state = 3 -- Aiming Cercle
@@ -206,6 +200,32 @@ function updatePlayer()
         if btn(4) then
             input = 4
             player.state = 4 -- Jump Croix
+        end
+
+        if btn(7) then -- Shoot Button Carre
+            input = 7
+            player.state = 3 -- Aiming
+            if player.dir == 0 then -- Vise vers le haut
+                if doorIsOpen(player.x, player.y - 1) == 0 then
+                    chgDoorState(player.x, player.y - 1)
+                end
+            end
+            if player.dir == 1 then -- Vise vers le droite
+                if doorIsOpen(player.x + 1, player.y) == 0 then
+                    chgDoorState(player.x + 1, player.y)
+                end
+            end
+            if player.dir == 2 then -- Vise vers le bas
+                if doorIsOpen(player.x, player.y + 1) == 0 then
+                    chgDoorState(player.x, player.y + 1)
+                end
+            end
+            if player.dir == 3 then -- Vise vers le gauche
+                if doorIsOpen(player.x - 1, player.y) == 0 then
+                    chgDoorState(player.x - 1, player.y)
+                end
+            end
+
         end
 
         -- Avance vers le haut
@@ -361,6 +381,40 @@ function doorIsOpen(x, y)
             else
                 return 0
             end
+        end
+        d = d.next
+    end
+end
+
+function chgDoorState(x, y)
+    local d = doors
+    while d do
+        if d.x == x and d.y == y then
+            if d.color == "secret" then
+                if d.open == 0 then
+                    d.open = 1
+                else
+                    d.open = 0
+                end
+            end
+
+            if d.color == "green" and player.greenKey == 1 then
+                d.open = 1
+                return
+            end
+            if d.color == "blue" and player.blueKey == 1 then
+                d.open = 1
+                return
+            end
+            if d.color == "red" and player.redKey == 1 then
+                d.open = 1
+                return
+            end
+            if d.color == "yellow" and player.yellowKey == 1 then
+                d.open = 1
+                return
+            end
+
         end
         d = d.next
     end
@@ -680,7 +734,6 @@ function drawDoors(x, y)
                     0, 3, 3)
                 spr(2, (d.x - camera.x) * 24 + 8, (d.y - camera.y) * 24 + 8, -1,
                     1, 0, 0, 1, 1)
-
             end
         end
         d = d.next
