@@ -23,7 +23,7 @@ doors = nil -- This a Lua Linked List
 chests = nil -- This a Lua Linked List
 camera = {x = 0, y = 0}
 input = -1
-game = {state = 0, init = -1, time = 0}
+game = {state = 5, init = -1, time = 0}
 
 -- --------------------
 -- FONCTION PRINCIPALE
@@ -98,6 +98,7 @@ function initFromMap(x1, y1, x2, y2)
                     next = chests,
                     x = i,
                     y = j,
+                    type = "little",
                     inside = "heart",
                     open = 0
                 }
@@ -107,6 +108,7 @@ function initFromMap(x1, y1, x2, y2)
                     next = chests,
                     x = i,
                     y = j,
+                    type = "little",
                     inside = "nothing",
                     open = 1
                 }
@@ -116,6 +118,7 @@ function initFromMap(x1, y1, x2, y2)
                     next = chests,
                     x = i,
                     y = j,
+                    type = "big",
                     inside = "nothing",
                     open = 0
                 }
@@ -209,20 +212,32 @@ function updatePlayer()
                 if doorIsOpen(player.x, player.y - 1) then
                     chgDoorState(player.x, player.y - 1)
                 end
+                if chestIsHere(player.x, player.y - 1) then
+                    chgChestState(player.x, player.y - 1)
+                end
             end
             if player.dir == 1 then -- Vise vers le droite
                 if doorIsOpen(player.x + 1, player.y) then
                     chgDoorState(player.x + 1, player.y)
+                end
+                if chestIsHere(player.x+1, player.y ) then
+                    chgChestState(player.x +1, player.y)
                 end
             end
             if player.dir == 2 then -- Vise vers le bas
                 if doorIsOpen(player.x, player.y + 1) then
                     chgDoorState(player.x, player.y + 1)
                 end
+                if chestIsHere(player.x, player.y + 1) then
+                    chgChestState(player.x, player.y +1)
+                end
             end
             if player.dir == 3 then -- Vise vers le gauche
                 if doorIsOpen(player.x - 1, player.y) then
                     chgDoorState(player.x - 1, player.y)
+                end
+                if chestIsHere(player.x+1, player.y ) then
+                    chgChestState(player.x+1, player.y )
                 end
             end
 
@@ -383,6 +398,29 @@ function doorIsOpen(x, y)
             end
         end
         d = d.next
+    end
+end
+
+function chestIsHere(x, y)
+    local c = chests
+    while c do
+        if c.x == x and c.y == y then
+                return 1
+        end
+        c = c.next
+    end
+    return 0
+end
+
+function chgChestState(x, y)
+    local c = chests
+    while c do
+    if c.open == 0 then
+                    c.open = 1
+                else
+                    c.open = 0
+                end
+     c = c.next
     end
 end
 
@@ -713,10 +751,11 @@ function drawMap(x, y) -- draw 64x64 Sprite Map
             drawMapSprite(val, i, j)
         end
     end
-    drawDoors(x, y)
+    drawDoors()
+    drawChests()
 end
 
-function drawDoors(x, y)
+function drawDoors()
     local d = doors
     while d do
         if d.open == 0 then
@@ -753,6 +792,27 @@ function drawDoors(x, y)
             end
         end
         d = d.next
+    end
+end
+
+function drawChests()
+    local c = chests
+    while c do
+     -- Big Chest
+     if c.type == "big" then
+    spr(185, (c.x - camera.x) * 24, (c.y - camera.y) * 24 + 7, -1, 1, 0, 0, 3, 2) 
+    return
+    end
+      
+     -- Little Chest
+     if c.open == 0 then
+    spr(121, (c.x - camera.x) * 24, (c.y - camera.y) * 24 + 8, -1, 1, 0, 0, 3, 2)
+    end
+    -- Little Chest Open
+    if c.open == 1 then 
+    spr(153,(c.x - camera.x) * 24, (c.y - camera.y) * 24 + 8, -1, 1, 0, 0, 3, 2)
+    end
+     c = c.next
     end
 end
 
@@ -820,13 +880,7 @@ function drawMapSprite(val, i, j)
     if val == 18 then spr(115, i * 24, j * 24, -1, 1, 0, 0, 3, 3) end
     -- Boulder
     if val == 19 then spr(470, i * 24, j * 24, -1, 1, 0, 0, 3, 3) end
-    -- Little Chest
-    if val == 20 then spr(121, i * 24, j * 24 + 8, -1, 1, 0, 0, 3, 2) end
-    -- Little Chest Open
-    if val == 21 then spr(153, i * 24, j * 24 + 8, -1, 1, 0, 0, 3, 2) end
-    -- Big Chest
-    if val == 22 then spr(185, i * 24, j * 24 + 7, -1, 1, 0, 0, 3, 2) end
-
+   
     -- Pretty Statue
     if val == 23 then spr(126, i * 24 + 4, j * 24 + 8, -1, 1, 0, 0, 2, 2) end
 
@@ -1263,9 +1317,9 @@ function lerp(a, b, mu) return a * (1 - mu) + b * mu end
 -- 115:ffffff00fffff003ffff0033ffff0333ffff0330ffff0033fffff003ffff0030
 -- 116:0333003333033000307033030707030370707033070303033033030333333300
 -- 117:330fffff000fffff030fffff300fffff330fffff300fffff030fffff000fffff
--- 118:ffff0000ff000333ff033300f0033007f0330000f0330f00f0330f07f0330f00
+-- 118:ffff0000ff000333ff033300f0033007f0330f00f0330f000033300703030300
 -- 119:3333333303033030703333070733337070333307703333070733337070333307
--- 120:0000ffff333000ff003330ff7003300f00f0330f00f0330f7003330000303030
+-- 120:0000ffff333000ff003330ff7003300f0000330f00f0330f70f0330f00f0330f
 -- 121:ffff0033ffff0000ff000333ff033300f0033007f0330000f0330f07f0330f00
 -- 122:3333333333333330030303037077707007777707707770700777770770777070
 -- 123:300fffff000fffff33000fff03330fff003300ff000330ff0033300f0303030f
@@ -1279,9 +1333,9 @@ function lerp(a, b, mu) return a * (1 - mu) + b * mu end
 -- 131:f0000333f0333330f0333300f033000ff03030fff00000ffffffffffffffffff
 -- 132:0333303300330303f0003003fff000f0ffffff03ffffff03ffffff00ffffffff
 -- 133:00ffffff300fffff330fffff33000fff333300ff303030ff000000ffffffffff
--- 134:f03300f000333000030303000303000000000033fff00333fff03030fff00000
+-- 134:0303000000000ff0fffffff0fffff000ffff0033fff00333fff03030fff00000
 -- 135:0303303033000033330ff033330ff033330ff033330000333030030300000000
--- 136:000030300ff000000fffffff000fffff3300ffff33300fff03030fff00000fff
+-- 136:0f00330f0003330000303030000030303300000033300fff03030fff00000fff
 -- 137:f03300f000333000030303000303000000000033fff00333fff03030fff00000
 -- 138:03070300330003333300333333003030330000003330ffff3030ffff0000ffff
 -- 139:0003030f0000000f3300ffff3030ffff0000ffffffffffffffffffffffffffff
