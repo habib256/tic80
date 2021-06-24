@@ -232,12 +232,12 @@ function updatePlayer()
                     chgChestState(player.x, player.y +1)
                 end
             end
-            if player.dir == 3 then -- Vise vers le gauche
+            if player.dir == 3 then -- Vise vers la gauche
                 if doorIsOpen(player.x - 1, player.y) then
                     chgDoorState(player.x - 1, player.y)
                 end
-                if chestIsHere(player.x+1, player.y ) then
-                    chgChestState(player.x+1, player.y )
+                if chestIsHere(player.x-1, player.y ) then
+                    chgChestState(player.x-1, player.y )
                 end
             end
 
@@ -415,11 +415,13 @@ end
 function chgChestState(x, y)
     local c = chests
     while c do
+        if c.x == x and c.y == y then
     if c.open == 0 then
                     c.open = 1
                 else
                     c.open = 0
                 end
+            end
      c = c.next
     end
 end
