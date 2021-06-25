@@ -16,7 +16,8 @@ player = {
     greenKey = 0,
     blueKey = 0,
     redKey = 0,
-    yellowKey = 0
+    yellowKey = 0,
+    score = 0
 }
 monsters = nil -- This a Lua Linked List
 doors = nil -- This a Lua Linked List
@@ -25,9 +26,10 @@ camera = {x = 0, y = 0}
 input = -1
 game = {state = 5, init = -1, time = 0}
 
--- --------------------
--- FONCTION PRINCIPALE
--- --------------------
+-- -------------------------
+-- FONCTIONS PRINCIPALES
+-- -------------------------
+
 function TIC()
     game.time = game.time + 1
     if game.state == -1 then flyBy() end -- flyBy Mode
@@ -99,7 +101,7 @@ function initFromMap(x1, y1, x2, y2)
                     x = i,
                     y = j,
                     type = "little",
-                    inside = "heart",
+                    inside = "life",
                     open = 0
                 }
             end
@@ -127,8 +129,10 @@ function initFromMap(x1, y1, x2, y2)
     end
 end
 
+----------------------------
 -- FLYBY
 -- -------------------------
+
 function flyBy()
     cls(0)
     if btn(0) then camera.y = camera.y - 1 end
@@ -220,8 +224,8 @@ function updatePlayer()
                 if doorIsOpen(player.x + 1, player.y) then
                     chgDoorState(player.x + 1, player.y)
                 end
-                if chestIsHere(player.x+1, player.y ) then
-                    chgChestState(player.x +1, player.y)
+                if chestIsHere(player.x + 1, player.y) then
+                    chgChestState(player.x + 1, player.y)
                 end
             end
             if player.dir == 2 then -- Vise vers le bas
@@ -229,15 +233,15 @@ function updatePlayer()
                     chgDoorState(player.x, player.y + 1)
                 end
                 if chestIsHere(player.x, player.y + 1) then
-                    chgChestState(player.x, player.y +1)
+                    chgChestState(player.x, player.y + 1)
                 end
             end
             if player.dir == 3 then -- Vise vers la gauche
                 if doorIsOpen(player.x - 1, player.y) then
                     chgDoorState(player.x - 1, player.y)
                 end
-                if chestIsHere(player.x-1, player.y ) then
-                    chgChestState(player.x-1, player.y )
+                if chestIsHere(player.x - 1, player.y) then
+                    chgChestState(player.x - 1, player.y)
                 end
             end
 
@@ -387,6 +391,10 @@ function isWater(x, y)
     end
 end
 
+-- ------------------------------------
+-- ---------------- DOORS -------------
+-- ------------------------------------
+
 function doorIsOpen(x, y)
     local d = doors
     while d do
@@ -398,31 +406,6 @@ function doorIsOpen(x, y)
             end
         end
         d = d.next
-    end
-end
-
-function chestIsHere(x, y)
-    local c = chests
-    while c do
-        if c.x == x and c.y == y then
-                return 1
-        end
-        c = c.next
-    end
-    return 0
-end
-
-function chgChestState(x, y)
-    local c = chests
-    while c do
-        if c.x == x and c.y == y then
-    if c.open == 0 then
-                    c.open = 1
-                else
-                    c.open = 0
-                end
-            end
-     c = c.next
     end
 end
 
@@ -473,6 +456,37 @@ function chgDoorState(x, y)
 
         end
         d = d.next
+    end
+end
+-- ------------------------------------
+-- -------------- CHESTS -------------
+-- ------------------------------------
+
+function chestIsHere(x, y)
+    local c = chests
+    while c do
+        if c.x == x and c.y == y then return 1 end
+        c = c.next
+    end
+    return 0
+end
+
+function chgChestState(x, y)
+    local c = chests
+    while c do
+        if c.x == x and c.y == y then
+            if c.open == 0 then
+                if c.inside == "life" then
+                    player.score = player.score + 100
+                    c.inside = "nothing"
+                end
+
+                c.open = 1
+            else
+                c.open = 0
+            end
+        end
+        c = c.next
     end
 end
 
@@ -692,6 +706,7 @@ function drawHUD()
         print("Tomb", 125, 2 * 24, 10, 2, 2)
         print("A TIC-80 game by gist974", 50, 5 * 24 + 2, 1, 1, 1)
         print("Graphics: Petitjean & Shurder", 35, 5 * 24 + 10, 1, 1, 1)
+
     else -- INGAME HUD
         if player.state == 5 then -- Show HUD 5 only in Inventory
             rect(2 * 24, 1 * 24, 5 * 24, 3 * 24, 8) -- Main Rect
@@ -720,7 +735,8 @@ function drawHUD()
             end
 
             print("Gold", 5 * 24, 2 * 24 + 14, 12, 1, 1)
-            spr(126, 5 * 24, 3 * 24, 12, 1, 1, 0, 2, 2)
+            -- spr(126, 5 * 24, 3 * 24, 12, 1, 1, 0, 2, 2)
+            print(player.score, 5 * 24, 2 * 24 + 16 + 10, 4, 1, 1)
         else
             -- HUD Life
             rect(211, 3, 19, 7, 1)
@@ -800,21 +816,24 @@ end
 function drawChests()
     local c = chests
     while c do
-     -- Big Chest
-     if c.type == "big" then
-    spr(185, (c.x - camera.x) * 24, (c.y - camera.y) * 24 + 7, -1, 1, 0, 0, 3, 2) 
-    return
-    end
-      
-     -- Little Chest
-     if c.open == 0 then
-    spr(121, (c.x - camera.x) * 24, (c.y - camera.y) * 24 + 8, -1, 1, 0, 0, 3, 2)
-    end
-    -- Little Chest Open
-    if c.open == 1 then 
-    spr(153,(c.x - camera.x) * 24, (c.y - camera.y) * 24 + 8, -1, 1, 0, 0, 3, 2)
-    end
-     c = c.next
+        -- Big Chest
+        if c.type == "big" then
+            spr(185, (c.x - camera.x) * 24, (c.y - camera.y) * 24 + 7, -1, 1, 0,
+                0, 3, 2)
+            return
+        end
+
+        -- Little Chest
+        if c.open == 0 then
+            spr(121, (c.x - camera.x) * 24, (c.y - camera.y) * 24 + 8, -1, 1, 0,
+                0, 3, 2)
+        end
+        -- Little Chest Open
+        if c.open == 1 then
+            spr(153, (c.x - camera.x) * 24, (c.y - camera.y) * 24 + 8, -1, 1, 0,
+                0, 3, 2)
+        end
+        c = c.next
     end
 end
 
@@ -882,7 +901,7 @@ function drawMapSprite(val, i, j)
     if val == 18 then spr(115, i * 24, j * 24, -1, 1, 0, 0, 3, 3) end
     -- Boulder
     if val == 19 then spr(470, i * 24, j * 24, -1, 1, 0, 0, 3, 3) end
-   
+
     -- Pretty Statue
     if val == 23 then spr(126, i * 24 + 4, j * 24 + 8, -1, 1, 0, 0, 2, 2) end
 
@@ -1117,7 +1136,7 @@ function lerp(a, b, mu) return a * (1 - mu) + b * mu end
 -- 167:000000003333333303033030d0d00d0ddddddddd00000000d044440dd040040d
 -- 168:0000000033333000303030000d0d0000dddd000000000000dddd0000000d0000
 -- 169:0004000000000404000404400000040400040000000440440000000000000000
--- 170:0000000004044040404444040404404000000000044444400000000000000000
+-- 170:0000000004044040404444040404404000000000444444440000000000000000
 -- 171:0000400040400000044040004040000000004000440440000000000000000000
 -- 172:0000444400004040000004040004444400444040044404044444444400404040
 -- 173:4440000040400000040000004444000040444000040444004444444040404000
