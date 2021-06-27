@@ -136,7 +136,7 @@ function initFromMap(x1, y1, x2, y2)
           x = i,
           y = j,
           type = "little",
-          inside = "life",
+          inside = "score",
           open = 0
         }
       end
@@ -524,6 +524,10 @@ function chgChestState(x, y)
     if c.x == x and c.y == y then
       if c.open == 0 then
         if c.inside == "life" then
+          player.life = player.life + 5
+          c.inside = "nothing"
+        end
+        if c.inside == "score" then
           player.score = player.score + 100
           c.inside = "nothing"
         end
