@@ -3,7 +3,18 @@
 -- desc: Axayacalt's Tomb Port for TIC-80
 -- graphics: 24x24 tiles & sprites by Petitjean & Shurder
 -- script: Lua
---
+
+
+
+-- INIT --------------------------------------------------------
+----------------------------------------------------------------
+----------------------------------------------------------------
+----------------------------------------------------------------
+----------------------------------------------------------------
+----------------------------------------------------------------
+
+
+------------- PLAYER AND CO INIT --------------------------
 -- player.state : 0->wait // 1->walk // 2->swim
 --    // 3->Aim // 4->Jump // 5->Inventory // 6->Dead
 player = {
@@ -19,51 +30,13 @@ player = {
   yellowKey = 0,
   score = 0
 }
+
 monsters = nil -- This a Lua Linked List
 doors = nil -- This a Lua Linked List
 chests = nil -- This a Lua Linked List
 camera = {x = 0, y = 0}
 input = -1
 game = {state = 5, init = -1, time = 0}
-
--- -------------------------
--- FONCTIONS PRINCIPALES
--- -------------------------
-
-function TIC()
-  game.time = game.time + 1
-  if game.state == -1 then flyBy() end -- flyBy Mode
-  if game.state == 0 then playMap(72, 08, 81, 13) end -- Attract Mode
-  if game.state == 1 then playMap(0, 0, 66, 67) end -- Original Map
-  if game.state == 2 then playMap(66, 16, 87, 33) end -- Arena Map
-  if game.state == 3 then playMap(64, 33, 89, 50) end -- The Cave
-  if game.state == 4 then playMap(64, 51, 88, 66) end -- The Keys
-  if game.state == 5 then playMap(89, 01, 120, 17) end -- The Keys 2
-end
-
-function playMap(x1, y1, x2, y2)
-  if game.init == -1 then
-    initFromMap(x1, y1, x2, y2)
-    game.init = 1
-  end
-  if player.state == 5 then -- INVENTORY MODE
-    if btnp(6) then -- Triangle to Quit INVENTORY MODE
-      input = 6
-      player.state = 0
-    end
-  else -- PLAYING MODE
-    updateMonster()
-    updatePlayer()
-    updateCamera()
-    checkInteraction()
-  end
-
-  cls(0)
-  drawMap(camera.x, camera.y)
-  drawMonsters()
-  drawHUD()
-  drawPlayer()
-end
 
 -- INIT FROM MAP
 -- --------------------
@@ -164,9 +137,77 @@ function initFromMap(x1, y1, x2, y2)
   end
 end
 
-----------------------------
--- FLYBY
--- -------------------------
+
+
+
+
+-- SELECT BASIC LOOP FONCTIONS  -- -------------------------
+----------------------------------------------------------------
+----------------------------------------------------------------
+----------------------------------------------------------------
+----------------------------------------------------------------
+----------------------------------------------------------------
+
+
+
+
+function TIC()
+  game.time = game.time + 1
+  if game.state == -1 then flyBy() end -- flyBy Mode
+  if game.state == 0 then playMap(72, 08, 81, 13) end -- Attract Mode
+  if game.state == 1 then playMap(0, 0, 66, 67) end -- Original Map
+  if game.state == 2 then playMap(66, 16, 87, 33) end -- Arena Map
+  if game.state == 3 then playMap(64, 33, 89, 50) end -- The Cave
+  if game.state == 4 then playMap(64, 51, 88, 66) end -- The Keys
+  if game.state == 5 then playMap(89, 01, 120, 17) end -- The Keys 2
+end
+
+function playMap(x1, y1, x2, y2)
+  if game.init == -1 then
+    initFromMap(x1, y1, x2, y2)
+    game.init = 1
+  end
+  if player.state == 5 then -- INVENTORY MODE
+    if btnp(6) then -- Triangle to Quit INVENTORY MODE
+      input = 6
+      player.state = 0
+    end
+  else -- PLAYING MODE
+    updateMonster()
+    updatePlayer()
+    updateCamera()
+    checkInteraction()
+  end
+
+  cls(0)
+  drawMap(camera.x, camera.y)
+  drawMonsters()
+  drawHUD()
+  drawPlayer()
+end
+
+
+
+
+
+-- CAMERA ------------------------------------------------------
+----------------------------------------------------------------
+----------------------------------------------------------------
+----------------------------------------------------------------
+----------------------------------------------------------------
+----------------------------------------------------------------
+
+
+
+function updateCamera()
+  if game.state == 0 then -- Attract Mode Fixed Camera
+    camera.x = 72
+    camera.y = 8
+  else -- Camera Follow the player
+    camera.x = player.x - 5
+    camera.y = player.y - 2
+  end
+end
 
 function flyBy()
   cls(0)
@@ -185,6 +226,16 @@ function flyBy()
   rect(0, 0, 52, 8, 0)
   print(c, 0, 0, 12, 1)
 end
+
+
+-- INTERACTION -----------------------------------------------
+----------------------------------------------------------------
+----------------------------------------------------------------
+----------------------------------------------------------------
+----------------------------------------------------------------
+----------------------------------------------------------------
+
+
 
 function checkInteraction()
   -- collide with Monsters
@@ -215,19 +266,15 @@ function checkInteraction()
   end
 end
 
-function updateCamera()
-  if game.state == 0 then -- Attract Mode Fixed Camera
-    camera.x = 72
-    camera.y = 8
-  else -- Camera Follow the player
-    camera.x = player.x - 5
-    camera.y = player.y - 2
-  end
-end
 
--- ----------------------------------
--- PLAYER UPDATE with INPUTS
--- ---------------------------------
+-- PLAYER CONTROL ----------------------------------------------
+----------------------------------------------------------------
+----------------------------------------------------------------
+----------------------------------------------------------------
+----------------------------------------------------------------
+----------------------------------------------------------------
+
+
 function updatePlayer()
 
   if btnp(6) then -- Triangle
@@ -438,9 +485,13 @@ function isWater(x, y)
   end
 end
 
--- ------------------------------------
--- ---------------- DOORS -------------
--- ------------------------------------
+
+-- DOORS AND CHEST ----------------------------------------------
+----------------------------------------------------------------
+----------------------------------------------------------------
+----------------------------------------------------------------
+----------------------------------------------------------------
+----------------------------------------------------------------
 
 function doorIsOpen(x, y)
   local d = doors
@@ -541,9 +592,14 @@ function chgChestState(x, y)
   end
 end
 
--- ----------------------
--- MONSTERS UPDATE
--- ----------------------
+
+-- MONSTER AI  --------------------------------------------------
+----------------------------------------------------------------
+----------------------------------------------------------------
+----------------------------------------------------------------
+----------------------------------------------------------------
+----------------------------------------------------------------
+
 function updateMonster()
 
   if game.time % 20 == 0 then
@@ -604,9 +660,16 @@ function monsterCanMove(x, y)
   end
 end
 
--- -----------------------------
--- DRAW PLAYER
--- -----------------------------
+
+
+-- DRAWING ------------------------------------------------------
+----------------------------------------------------------------
+----------------------------------------------------------------
+----------------------------------------------------------------
+----------------------------------------------------------------
+----------------------------------------------------------------
+
+
 function drawPlayer()
 
   if player.state == 0 then
