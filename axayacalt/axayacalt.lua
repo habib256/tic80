@@ -1136,7 +1136,7 @@ function drawMapSprite(val, i, j)
 
 end
 
--- FONCTION UTILITAIRES
+-- FONCTIONS UTILITAIRES
 -- -------------------------------
 function toInt(n)
   local s = tostring(n)
