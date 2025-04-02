@@ -3,52 +3,32 @@
 -- desc: Axayacalt's Tomb Port for TIC-80
 -- graphics: 24x24 tiles & sprites by Petitjean & Shurder
 -- script: Lua
-
-------------- PLAYER AND CO INIT --------------------------
+--
 -- player.state : 0->wait // 1->walk // 2->swim
 --    // 3->Aim // 4->Jump // 5->Inventory // 6->Dead
-player = {x, y, dir, state = 0, life = 10, O2 = 80, greenKey = 0, blueKey = 0, redKey = 0, yellowKey = 0, score = 0}
-
+player = {
+  x,
+  y,
+  dir,
+  state = 0,
+  life = 10,
+  O2 = 80,
+  greenKey = 0,
+  blueKey = 0,
+  redKey = 0,
+  yellowKey = 0,
+  score = 0
+}
 monsters = nil -- This a Lua Linked List
 doors = nil -- This a Lua Linked List
 chests = nil -- This a Lua Linked List
 camera = {x = 0, y = 0}
 input = -1
-game = {state = 5, init = -1, time = 0}
+game = {state = 0, init = -1, time = 0}
 
--- INIT FROM MAP
--- --------------------
-function initFromMap(x1, y1, x2, y2)
-  local objTypes = {
-    [49] = {list="monsters", props={dir=0}},
-    [64] = {list="player", props={dir=-1}},
-    [2] = {list="doors", props={color="secret", open=0}},
-    [33] = {list="doors", props={color="red", open=0}},
-    [34] = {list="doors", props={color="green", open=0}},
-    [35] = {list="doors", props={color="blue", open=0}},
-    [36] = {list="doors", props={color="yellow", open=0}},
-    [20] = {list="chests", props={type="little", inside="score", open=0}},
-    [21] = {list="chests", props={type="little", inside="nothing", open=1}},
-    [22] = {list="chests", props={type="big", inside="nothing", open=0}}
-  }
-  for i = x1, x2 do
-    for j = y1, y2 do
-      local val = peek(0x08000 + i + j * 240)
-      local obj = objTypes[val]
-      if obj then
-        local newObj = {x=i, y=j, next=_G[obj.list]}
-        for k,v in pairs(obj.props) do newObj[k] = v end
-        if obj.list == "player" then
-          for k,v in pairs(newObj) do player[k] = v end
-        else
-          _G[obj.list] = newObj
-        end
-      end
-    end
-  end
-end
-
--- SELECT BASIC LOOP FONCTIONS  --
+-- -------------------------
+-- FONCTIONS PRINCIPALES
+-- -------------------------
 
 function TIC()
   game.time = game.time + 1
@@ -85,17 +65,108 @@ function playMap(x1, y1, x2, y2)
   drawPlayer()
 end
 
--- CAMERA --
+-- INIT FROM MAP
+-- --------------------
+function initFromMap(x1, y1, x2, y2)
+  for i = x1, x2 do
+    for j = y1, y2 do
+      val = peek(0x08000 + i + j * 240)
+      if val == 49 then -- Some monsters to add from the map
+        monsters = {
+          next = monsters,
+          x = i,
+          y = j,
+          dir = 0
+        }
+      end
+      if val == 64 then -- Player starting position
+        player.x = i
+        player.y = j
+        player.dir = -1
+      end
+      if val == 2 then -- SECRET WALL
+        doors = {
+          next = doors,
+          x = i,
+          y = j,
+          color = "secret",
+          open = 0
+        }
+      end
+      if val == 33 then -- RED DOOR
+        doors = {
+          next = doors,
+          x = i,
+          y = j,
+          color = "red",
+          open = 0
+        }
+      end
+      if val == 34 then -- GREEN DOOR
+        doors = {
+          next = doors,
+          x = i,
+          y = j,
+          color = "green",
+          open = 0
+        }
+      end
+      if val == 35 then -- BLUE DOOR
+        doors = {
+          next = doors,
+          x = i,
+          y = j,
+          color = "blue",
+          open = 0
+        }
+      end
+      if val == 36 then -- YELLOW DOOR
+        doors = {
+          next = doors,
+          x = i,
+          y = j,
+          color = "yellow",
+          open = 0
+        }
+      end
 
-function updateCamera()
-  if game.state == 0 then -- Attract Mode Fixed Camera
-    camera.x = 72
-    camera.y = 8
-  else -- Camera Follow the player
-    camera.x = player.x - 5
-    camera.y = player.y - 2
+      if val == 20 then -- LITTLE CHEST CLOSED
+        chests = {
+          next = chests,
+          x = i,
+          y = j,
+          type = "little",
+          inside = "score",
+          open = 0
+        }
+      end
+      if val == 21 then -- LITTLE CHEST OPEN
+        chests = {
+          next = chests,
+          x = i,
+          y = j,
+          type = "little",
+          inside = "nothing",
+          open = 1
+        }
+      end
+      if val == 21 then -- BIG CHEST 
+        chests = {
+          next = chests,
+          x = i,
+          y = j,
+          type = "big",
+          inside = "nothing",
+          open = 0
+        }
+      end
+    end
   end
 end
+
+----------------------------
+-- FLYBY
+-- -------------------------
 
 function flyBy()
   cls(0)
@@ -114,8 +185,6 @@ function flyBy()
   rect(0, 0, 52, 8, 0)
   print(c, 0, 0, 12, 1)
 end
-
--- INTERACTION --
 
 function checkInteraction()
   -- collide with Monsters
@@ -146,8 +215,19 @@ function checkInteraction()
   end
 end
 
--- PLAYER CONTROL --
+function updateCamera()
+  if game.state == 0 then -- Attract Mode Fixed Camera
+    camera.x = 72
+    camera.y = 8
+  else -- Camera Follow the player
+    camera.x = player.x - 5
+    camera.y = player.y - 2
+  end
+end
 
+-- ----------------------------------
+-- PLAYER UPDATE with INPUTS
+-- ---------------------------------
 function updatePlayer()
 
   if btnp(6) then -- Triangle
@@ -269,7 +349,9 @@ function updatePlayer()
         player.life = 0
       end
     end
+
   end -- Wait
+
 end
 
 function playerCanMove(x, y)
@@ -356,7 +438,10 @@ function isWater(x, y)
   end
 end
 
--- DOORS AND CHEST --
+-- ------------------------------------
+-- ---------------- DOORS -------------
+-- ------------------------------------
+
 function doorIsOpen(x, y)
   local d = doors
   while d do
@@ -375,16 +460,54 @@ function chgDoorState(x, y)
   local d = doors
   while d do
     if d.x == x and d.y == y then
-      if d.color == "secret" or (player[d.color.."Key"] == 1) then
-        d.open = 1 - d.open
+      if d.color == "secret" then
+        if d.open == 0 then
+          d.open = 1
+        else
+          d.open = 0
+        end
+      end
+
+      if d.color == "green" and player.greenKey == 1 then
+        if d.open == 0 then
+          d.open = 1
+        else
+          d.open = 0
+        end
         return
       end
+      if d.color == "blue" and player.blueKey == 1 then
+        if d.open == 0 then
+          d.open = 1
+        else
+          d.open = 0
+        end
+        return
+      end
+      if d.color == "red" and player.redKey == 1 then
+        if d.open == 0 then
+          d.open = 1
+        else
+          d.open = 0
+        end
+        return
+      end
+      if d.color == "yellow" and player.yellowKey == 1 then
+        if d.open == 0 then
+          d.open = 1
+        else
+          d.open = 0
+        end
+        return
+      end
+
     end
     d = d.next
   end
 end
-
+-- ------------------------------------
 -- -------------- CHESTS -------------
+-- ------------------------------------
 
 function chestIsHere(x, y)
   local c = chests
@@ -418,9 +541,9 @@ function chgChestState(x, y)
   end
 end
 
-
--- MONSTER AI  --
-
+-- ----------------------
+-- MONSTERS UPDATE
+-- ----------------------
 function updateMonster()
 
   if game.time % 20 == 0 then
@@ -462,25 +585,28 @@ function updateMonster()
       m = m.next
     end
   end
+
 end
 
 function monsterCanMove(x, y)
-  local blockedTiles = {1,2,3,8,9,10,11,12,14,15,17,18,20,21,22,23,37,39}
-  local val = mget(x, y)
-  
-  if val >= 33 and val <= 36 then
-    return doorIsOpen(x, y)
+  val = mget(x, y)
+  if val == 1 or val == 2 or val == 3 or val == 8 or val ==
+    9 or val == 39 or val == 10 or val == 11 or val ==
+    12 or val == 23 or val == 15 or val == 17 or val ==
+    20 or val == 21 or val == 22 or val == 37 or val ==
+    18 or val == 14 then
+    return 0
+  else
+    if val == 33 or val == 34 or val == 35 or val == 36 then
+      return doorIsOpen(x, y)
+    end
+    return 1
   end
-  
-  for _, tile in ipairs(blockedTiles) do
-    if val == tile then return 0 end
-  end
-  
-  return 1
 end
 
--- DRAWING --
-
+-- -----------------------------
+-- DRAW PLAYER
+-- -----------------------------
 function drawPlayer()
 
   if player.state == 0 then
@@ -604,31 +730,48 @@ function drawPlayer()
         0, 0, 3, 3)
     spr(271, 3 * 24 + 8, (player.y - camera.y) * 24 + 4,
         15, 1, 0, 0, 1, 1)
+
   end
 end
 
+-- -----------------------------
 -- DRAW MONSTERS
+-- -----------------------------
+-- print(game.time%30//15,75,2*24,10,2,2)
 
 function drawMonsters()
   local m = monsters
   while m do
-    local sprite = 352
-    local flip = 0
-    
-    if m.dir == 1 then sprite = 361
-    elseif m.dir == 3 then sprite = 358
-    else
-      sprite = sprite + game.time % 30 // 15 * 3
-      flip = m.dir == 2 and 1 or 0
+    if m.dir == -1 then
+      spr(352 + game.time % 30 // 15 * 3,
+          (m.x - camera.x) * 24, (m.y - camera.y) * 24,
+          15, 1, m.dir, 0, 3, 3)
     end
-    
-    spr(sprite, (m.x - camera.x) * 24, (m.y - camera.y) * 24, 15, 1, flip, 0, 3, 3)
+    if m.dir == 0 then -- Right
+      spr(352 + game.time % 30 // 15 * 3,
+          (m.x - camera.x) * 24, (m.y - camera.y) * 24,
+          15, 1, m.dir, 0, 3, 3)
+    end
+    if m.dir == 1 then -- UP
+      spr(361, (m.x - camera.x) * 24,
+          (m.y - camera.y) * 24, 15, 1, 0, 0, 3, 3)
+    end
+    if m.dir == 2 then -- Left
+      spr(352 + game.time % 30 // 15 * 3,
+          (m.x - camera.x) * 24, (m.y - camera.y) * 24,
+          15, 1, 1, 0, 3, 3)
+    end
+    if m.dir == 3 then -- Down
+      spr(358, (m.x - camera.x) * 24,
+          (m.y - camera.y) * 24, 15, 1, 0, 0, 3, 3)
+    end
     m = m.next
   end
 end
 
+-- ----------------
 -- DRAW HUD 
-
+-- ----------------
 function drawHUD()
   if game.state == 0 then -- Attract Mode
     print("Axayacalt's", 75, 1 * 24 + 6, 10, 2, 2)
@@ -685,8 +828,9 @@ function drawHUD()
   end
 end
 
+-- ------------------------------
 -- DRAW MAP
-
+-- -----------------------------
 function drawMap(x, y) -- draw 64x64 Sprite Map
   x = toInt(x)
   y = toInt(y)
@@ -706,25 +850,39 @@ function drawMap(x, y) -- draw 64x64 Sprite Map
 end
 
 function drawDoors()
-  local doorColors = {
-    green = 239,
-    blue = 255, 
-    red = 223,
-    yellow = 207,
-    secret = 2
-  }
-
   local d = doors
   while d do
     if d.open == 0 then
-      local keySprite = doorColors[d.color] or 65
-      local x = (d.x - camera.x) * 24
-      local y = (d.y - camera.y) * 24
-      
-      spr(211, x, y, -1, 1, 0, 0, 3, 3)
-      
-      if d.color ~= "secret" then
-        spr(keySprite, x + 8, y + 8, -1, 1, 0, 0, 1, 1)
+      if d.color == "green" then
+        spr(211, (d.x - camera.x) * 24,
+            (d.y - camera.y) * 24, -1, 1, 0, 0, 3, 3)
+        spr(239, (d.x - camera.x) * 24 + 8,
+            (d.y - camera.y) * 24 + 8, -1, 1, 0, 0, 1, 1)
+      end
+      if d.color == "blue" then
+        spr(211, (d.x - camera.x) * 24,
+            (d.y - camera.y) * 24, -1, 1, 0, 0, 3, 3)
+        spr(255, (d.x - camera.x) * 24 + 8,
+            (d.y - camera.y) * 24 + 8, -1, 1, 0, 0, 1, 1)
+      end
+      if d.color == "red" then
+        spr(211, (d.x - camera.x) * 24,
+            (d.y - camera.y) * 24, -1, 1, 0, 0, 3, 3)
+        spr(223, (d.x - camera.x) * 24 + 8,
+            (d.y - camera.y) * 24 + 8, -1, 1, 0, 0, 1, 1)
+      end
+      if d.color == "yellow" then
+        spr(211, (d.x - camera.x) * 24,
+            (d.y - camera.y) * 24, -1, 1, 0, 0, 3, 3)
+        spr(207, (d.x - camera.x) * 24 + 8,
+            (d.y - camera.y) * 24 + 8, -1, 1, 0, 0, 1, 1)
+      end
+      if d.color == "secret" then
+        -- Secret Wall
+        spr(65, (d.x - camera.x) * 24,
+            (d.y - camera.y) * 24, -1, 1, 0, 0, 3, 3)
+        spr(2, (d.x - camera.x) * 24 + 8,
+            (d.y - camera.y) * 24 + 8, -1, 1, 0, 0, 1, 1)
       end
     end
     d = d.next
@@ -734,10 +892,23 @@ end
 function drawChests()
   local c = chests
   while c do
-    local spriteId = c.type == "big" and 185 or (c.open == 0 and 121 or 153)
-    local yOffset = c.type == "big" and 7 or 8
-    spr(spriteId, (c.x - camera.x) * 24, (c.y - camera.y) * 24 + yOffset, -1, 1, 0, 0, 3, 2)
-    if c.type == "big" then return end
+    -- Big Chest
+    if c.type == "big" then
+      spr(185, (c.x - camera.x) * 24,
+          (c.y - camera.y) * 24 + 7, -1, 1, 0, 0, 3, 2)
+      return
+    end
+
+    -- Little Chest
+    if c.open == 0 then
+      spr(121, (c.x - camera.x) * 24,
+          (c.y - camera.y) * 24 + 8, -1, 1, 0, 0, 3, 2)
+    end
+    -- Little Chest Open
+    if c.open == 1 then
+      spr(153, (c.x - camera.x) * 24,
+          (c.y - camera.y) * 24 + 8, -1, 1, 0, 0, 3, 2)
+    end
     c = c.next
   end
 end
@@ -745,54 +916,164 @@ end
 -- DRAW SPRITES
 -- --------------------------------------------------
 function drawMapSprite(val, i, j)
-  local sprites = {
-    [1] = {65, 0, 0, 3, 3},
-    [3] = {68, 0, 0, 3, 3},
-    [4] = {{71, 0, 0, 2, 3}, {72, 16, 0, 1, 3}},
-    [5] = {{72, 0, 0, 1, 3}, {72, 8, 0, 1, 3}, {72, 16, 0, 1, 3}},
-    [6] = {{72, 0, 0, 1, 3}, {72, 8, 0, 2, 3}},
-    [7] = {160, 0, 0, 3, 3},
-    [8] = {204, 0, 0, 3, 2},
-    [9] = {236, 0, 0, 3, 2},
-    [10] = {163, 0, 0, 3, 3},
-    [11] = {118, 0, 0, 3, 3},
-    [12] = {166, 0, 0, 3, 3},
-    [13] = {13, 8, 16, 1, 1},
-    [14] = {112, 0, 0, 3, 3},
-    [15] = {208, 0, 0, 3, 3},
-    [17] = {78, 8, 0, 2, 3},
-    [16] = {{71, 0, 0, 1, 3, 0, 1}, {72, 0, 8, 1, 3, 0, 1}, {72, 0, 16, 1, 3, 0, 1}},
-    [32] = {{72, 0, 0, 1, 3, 0, 1}, {72, 0, 8, 1, 3, 0, 1}, {72, 0, 16, 1, 3, 0, 1}},
-    [48] = {{72, 0, 0, 1, 3, 0, 1}, {72, 0, 8, 2, 3, 0, 1}},
-    [18] = {115, 0, 0, 3, 3},
-    [19] = {470, 0, 0, 3, 3},
-    [23] = {126, 4, 8, 2, 2},
-    [38] = {{188, 0, 0, 3, 1}, {188, 0, 16, 3, 1, 0, 2}},
-    [37] = {{27, -29, 0, 5, 3}, {27, 11, 0, 5, 3, 1, 0}},
-    [55] = {{74, -21, -24, 4, 3}, {74, 11, -24, 4, 3, 1, 0}, {124, -15, 0, 2, 3, 1, 0}, {124, 22, 0, 2, 3, 1, 0}},
-    [80] = {{172, 5, -16, 2, 1}, {217, 0, 0, 3, 3, 1, 0}}
-  }
-  
-  local keys = {
-    [207] = "yellowKey",
-    [223] = "redKey",
-    [239] = "greenKey",
-    [255] = "blueKey"
-  }
-  
-  if sprites[val] then
-    for _, s in ipairs(type(sprites[val][1]) == "table" and sprites[val] or {sprites[val]}) do
-      spr(s[1], i*24 + (s[2] or 0), j*24 + (s[3] or 0), -1, 1, s[6] or 0, s[7] or 0, s[4], s[5])
-    end
-  elseif keys[val] and player[keys[val]] == 0 then
-    spr(val, i*24 + 8, j*24 + 8, -1, 1, 0, 0, 1, 1)
-  elseif game.state == -1 and (val == 49 or val == 64) then
-    spr(val == 49 and 352 or 256, i*24, j*24, 15, 1, 0, 0, 3, 3)
-    if val == 64 then spr(271, i*24 + 8, j*24 + 4, 15, 1, 0, 0, 1, 1) end
+  -- Wall 1 
+  if val == 1 then
+    spr(65, i * 24, j * 24, -1, 1, 0, 0, 3, 3)
   end
+  -- Wall 2 
+  if val == 3 then
+    spr(68, i * 24, j * 24, -1, 1, 0, 0, 3, 3)
+  end
+  -- Stairs left
+  if val == 4 then
+    spr(71, i * 24, j * 24, -1, 1, 0, 0, 2, 3)
+    spr(72, i * 24 + 16, j * 24, -1, 1, 0, 0, 1, 3)
+  end
+  -- Stairs center
+  if val == 5 then
+    spr(72, i * 24, j * 24, -1, 1, 0, 0, 1, 3)
+    spr(72, i * 24 + 8, j * 24, -1, 1, 0, 0, 1, 3)
+    spr(72, i * 24 + 16, j * 24, -1, 1, 0, 0, 1, 3)
+  end
+  -- Stairs right
+  if val == 6 then
+    spr(72, i * 24, j * 24, -1, 1, 0, 0, 1, 3)
+    spr(72, i * 24 + 8, j * 24, -1, 1, 0, 0, 2, 3)
+  end
+  -- Pikes
+  if val == 7 then
+    spr(160, i * 24, j * 24, -1, 1, 0, 0, 3, 3)
+  end
+  -- Little Skull
+  if val == 8 then
+    spr(204, i * 24, j * 24, -1, 1, 0, 0, 3, 2)
+  end
+  -- Big Skull
+  if val == 9 then
+    spr(236, i * 24, j * 24, -1, 1, 0, 0, 3, 2)
+  end
+  -- Aztec Statue
+  if val == 10 then
+    spr(163, i * 24, j * 24, -1, 1, 0, 0, 3, 3)
+  end
+  -- Weird Statue
+  if val == 11 then
+    spr(118, i * 24, j * 24, -1, 1, 0, 0, 3, 3)
+  end
+  -- Pedestal
+  if val == 12 then
+    spr(166, i * 24, j * 24, -1, 1, 0, 0, 3, 3)
+  end
+  -- Book
+  if val == 13 then
+    spr(13, i * 24 + 8, j * 24 + 16, -1, 1, 0, 0, 1, 1)
+  end
+  -- Water
+  if val == 14 then
+    spr(112, i * 24, j * 24, -1, 1, 0, 0, 3, 3)
+  end
+  -- Pillar
+  if val == 15 then
+    spr(208, i * 24, j * 24, -1, 1, 0, 0, 3, 3)
+  end
+  -- Tree
+  if val == 17 then
+    spr(78, i * 24 + 8, j * 24, -1, 1, 0, 0, 2, 3)
+  end
+  -- Rotated Stairs up
+  if val == 16 then
+    spr(71, i * 24, j * 24, -1, 1, 0, 1, 1, 3)
+    spr(72, i * 24, j * 24 + 8, -1, 1, 0, 1, 1, 3)
+    spr(72, i * 24, j * 24 + 16, -1, 1, 0, 1, 1, 3)
+  end
+  -- Rotated Stairs center
+  if val == 32 then
+    spr(72, i * 24, j * 24, -1, 1, 0, 1, 1, 3)
+    spr(72, i * 24, j * 24 + 8, -1, 1, 0, 1, 1, 3)
+    spr(72, i * 24, j * 24 + 16, -1, 1, 0, 1, 1, 3)
+  end
+  -- Rotated Stairs right
+  if val == 48 then
+    spr(72, i * 24, j * 24, -1, 1, 0, 1, 1, 3)
+    spr(72, i * 24, j * 24 + 8, -1, 1, 0, 1, 2, 3)
+  end
+  -- Mine
+  if val == 18 then
+    spr(115, i * 24, j * 24, -1, 1, 0, 0, 3, 3)
+  end
+  -- Boulder
+  if val == 19 then
+    spr(470, i * 24, j * 24, -1, 1, 0, 0, 3, 3)
+  end
+
+  -- Pretty Statue
+  if val == 23 then
+    spr(126, i * 24 + 4, j * 24 + 8, -1, 1, 0, 0, 2, 2)
+  end
+
+  -- Spacechip way
+  if val == 38 then
+    spr(188, i * 24, j * 24, -1, 1, 0, 0, 3, 1)
+    spr(188, i * 24, j * 24 + 16, -1, 1, 0, 2, 3, 1)
+  end
+  if game.state == -1 then -- It's flyBy Mode
+    -- Gobelin Sprite	  
+    if val == 49 then
+      spr(352, i * 24, j * 24, 15, 1, 0, 0, 3, 3)
+    end
+    -- Player Sprite	  
+    if val == 64 then
+      spr(256, i * 24, j * 24, 15, 1, 0, 0, 3, 3)
+      spr(271, i * 24 + 8, j * 24 + 4, 15, 1, 0, 0, 1, 1)
+    end
+  end
+  -- Big Desk	  
+  if val == 37 then
+    spr(27, i * 24 - 32 + 3, j * 24, -1, 1, 0, 0, 5, 3)
+    spr(27, i * 24 + 8 + 3, j * 24, -1, 1, 1, 0, 5, 3)
+  end
+  -- Yellow Key
+  if val == 207 then
+    if player.yellowKey == 0 then
+      spr(val, i * 24 + 8, j * 24 + 8, -1, 1, 0, 0, 1, 1)
+    end
+  end
+  -- Red Key
+  if val == 223 then
+    if player.redKey == 0 then
+      spr(val, i * 24 + 8, j * 24 + 8, -1, 1, 0, 0, 1, 1)
+    end
+  end
+  -- Green Key
+  if val == 239 then
+    if player.greenKey == 0 then
+      spr(val, i * 24 + 8, j * 24 + 8, -1, 1, 0, 0, 1, 1)
+    end
+  end
+  -- Blue Key
+  if val == 255 then
+    if player.blueKey == 0 then
+      spr(val, i * 24 + 8, j * 24 + 8, -1, 1, 0, 0, 1, 1)
+    end
+  end
+  -- Big Arch	  
+  if val == 55 then
+    spr(74, i * 24 - 24 + 3, j * 24 - 24, -1, 1, 0, 0,
+        4, 3)
+    spr(74, i * 24 + 11, j * 24 - 24, -1, 1, 1, 0, 4, 3)
+    spr(124, i * 24 - 15, j * 24, -1, 1, 1, 0, 2, 3)
+    spr(124, i * 24 + 22, j * 24, -1, 1, 1, 0, 2, 3)
+  end
+  -- SpaceShip Control	  
+  if val == 80 then
+    spr(172, i * 24 + 5, j * 24 - 24 + 8, -1, 1, 0, 0,
+        2, 1)
+    spr(217, i * 24, j * 24, -1, 1, 1, 0, 3, 3)
+  end
+
 end
 
--- FONCTIONS UTILITAIRES
+-- FONCTION UTILITAIRES
 -- -------------------------------
 function toInt(n)
   local s = tostring(n)
@@ -806,4 +1087,3 @@ end
 
 -- Linear Interpolation
 function lerp(a, b, mu) return a * (1 - mu) + b * mu end
-

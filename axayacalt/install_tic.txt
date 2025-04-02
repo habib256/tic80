@@ -1,0 +1,24 @@
+Arch
+
+run the following commands in the Terminal
+
+sudo pacman -S cmake ruby mesa libglvnd glu
+git clone --recursive https://github.com/nesbox/TIC-80 && cd TIC-80/build
+cmake -DBUILD_WITH_ALL=On -DBUILD_PRO=On ..
+make -j4
+
+
+
+pro version - nesbox/TIC-80 GitHub Wiki
+
+To help support TIC-80 development, we have a PRO Version. This version has a few additional features and binaries can only be downloaded via our Itch.io page.
+Please, consider supporting the developer by buying the PRO version or by becoming a sponsor.
+
+For users who can't spend the money, we made it easy to build the pro version from the source code: (cmake .. -DBUILD_PRO=On)
+Pro features
+
+    Save/load cartridges in text format, and create your game in any external editor you want, also useful for version control systems.
+    Even more memory banks: instead of having only 1 memory bank you have 8. You can switch banks in the editors or in code using sync. The code is not split into banks to you get 8 times longer code size directly in the editor.
+    Export your game without editors, and then publish it to app stores using the alone=1 parameter of the export command.
+
+https://www.lua.org/manual/5.4/
