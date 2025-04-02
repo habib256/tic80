@@ -3,28 +3,136 @@
 -- desc: Axayacalt's Tomb Port for TIC-80
 -- graphics: 24x24 tiles & sprites by Petitjean & Shurder
 -- script: Lua
---
--- player.state : 0->wait // 1->walk // 2->swim
---    // 3->Aim // 4->Jump // 5->Inventory // 6->Dead
-player = {
-  x,
-  y,
-  dir,
-  state = 0,
-  life = 10,
-  O2 = 80,
-  greenKey = 0,
-  blueKey = 0,
-  redKey = 0,
-  yellowKey = 0,
-  score = 0
+
+
+-- Configuration globale du jeu
+GAME_CONFIG = {
+    STATES = {
+        FLYBY = -1,
+        ATTRACT = 0,
+        GAME = 1,
+        ARENA = 2,
+        CAVE = 3,
+        KEYS = 4,
+        KEYS2 = 5
+    },
+    PLAYER_STATES = {
+        WAIT = 0,
+        WALK = 1,
+        SWIM = 2,
+        AIM = 3,
+        JUMP = 4,
+        INVENTORY = 5,
+        DEAD = 6
+    },
+    ENTITY_TYPES = {
+        MONSTER = "monster",
+        DOOR = "door",
+        CHEST = "chest"
+    }
 }
-monsters = nil -- This a Lua Linked List
-doors = nil -- This a Lua Linked List
-chests = nil -- This a Lua Linked List
-camera = {x = 0, y = 0}
+
+-- Gestionnaire d'entités
+EntityManager = {
+    entities = {},
+    
+    create = function(self, type, x, y, properties)
+        local entity = {
+            type = type,
+            x = x,
+            y = y,
+            properties = properties or {}
+        }
+        table.insert(self.entities, entity)
+        return entity
+    end,
+    
+    findAt = function(self, x, y)
+        for _, entity in ipairs(self.entities) do
+            if entity.x == x and entity.y == y then
+                return entity
+            end
+        end
+        return nil
+    end,
+    
+    remove = function(self, entity)
+        for i, e in ipairs(self.entities) do
+            if e == entity then
+                table.remove(self.entities, i)
+                break
+            end
+        end
+    end,
+    
+    update = function(self)
+        for _, entity in ipairs(self.entities) do
+            if entity.update then
+                entity:update()
+            end
+        end
+    end,
+    
+    draw = function(self)
+        for _, entity in ipairs(self.entities) do
+            if entity.draw then
+                entity:draw()
+            end
+        end
+    end
+}
+
+-- Joueur
+player = {
+    x = 0,
+    y = 0,
+    dir = -1,
+    state = GAME_CONFIG.PLAYER_STATES.WAIT,
+    life = 10,
+    O2 = 80,
+    greenKey = 0,
+    blueKey = 0,
+    redKey = 0,
+    yellowKey = 0,
+    score = 0,
+    
+    update = function(self)
+        -- La logique de mise à jour du joueur sera déplacée ici
+    end,
+    
+    draw = function(self)
+        -- La logique de dessin du joueur sera déplacée ici
+    end
+}
+
+-- Caméra
+camera = {
+    x = 0,
+    y = 0,
+    
+    update = function(self)
+        if game.state == GAME_CONFIG.STATES.ATTRACT then
+            self.x = 72
+            self.y = 8
+        else
+            self.x = player.x - 5
+            self.y = player.y - 2
+        end
+    end
+}
+
+-- État du jeu
+game = {
+    state = GAME_CONFIG.STATES.ATTRACT,
+    init = -1,
+    time = 0,
+    
+    update = function(self)
+        self.time = self.time + 1
+    end
+}
+
 input = -1
-game = {state = 0, init = -1, time = 0}
 
 -- -------------------------
 -- FONCTIONS PRINCIPALES
@@ -68,99 +176,68 @@ end
 -- INIT FROM MAP
 -- --------------------
 function initFromMap(x1, y1, x2, y2)
-  for i = x1, x2 do
-    for j = y1, y2 do
-      val = peek(0x08000 + i + j * 240)
-      if val == 49 then -- Some monsters to add from the map
-        monsters = {
-          next = monsters,
-          x = i,
-          y = j,
-          dir = 0
-        }
-      end
-      if val == 64 then -- Player starting position
+  -- Réinitialiser les entités
+  EntityManager.entities = {}
+  
+  -- Parcourir la zone de la carte spécifiée
+  for j = y1, y2 do
+    for i = x1, x2 do
+      val = mget(i, j)
+      if val == 49 then -- MONSTER
+        EntityManager:create(GAME_CONFIG.ENTITY_TYPES.MONSTER, i, j, {
+          dir = 0,
+          move = 0,
+          color = 8
+        })
+      elseif val == 64 then -- PLAYER
         player.x = i
         player.y = j
         player.dir = -1
-      end
-      if val == 2 then -- SECRET WALL
-        doors = {
-          next = doors,
-          x = i,
-          y = j,
+      elseif val == 2 then -- SECRET WALL
+        EntityManager:create(GAME_CONFIG.ENTITY_TYPES.DOOR, i, j, {
           color = "secret",
           open = 0
-        }
-      end
-      if val == 33 then -- RED DOOR
-        doors = {
-          next = doors,
-          x = i,
-          y = j,
+        })
+      elseif val == 33 then -- RED DOOR
+        EntityManager:create(GAME_CONFIG.ENTITY_TYPES.DOOR, i, j, {
           color = "red",
           open = 0
-        }
-      end
-      if val == 34 then -- GREEN DOOR
-        doors = {
-          next = doors,
-          x = i,
-          y = j,
+        })
+      elseif val == 34 then -- GREEN DOOR
+        EntityManager:create(GAME_CONFIG.ENTITY_TYPES.DOOR, i, j, {
           color = "green",
           open = 0
-        }
-      end
-      if val == 35 then -- BLUE DOOR
-        doors = {
-          next = doors,
-          x = i,
-          y = j,
+        })
+      elseif val == 35 then -- BLUE DOOR
+        EntityManager:create(GAME_CONFIG.ENTITY_TYPES.DOOR, i, j, {
           color = "blue",
           open = 0
-        }
-      end
-      if val == 36 then -- YELLOW DOOR
-        doors = {
-          next = doors,
-          x = i,
-          y = j,
+        })
+      elseif val == 36 then -- YELLOW DOOR
+        EntityManager:create(GAME_CONFIG.ENTITY_TYPES.DOOR, i, j, {
           color = "yellow",
           open = 0
-        }
-      end
-
-      if val == 20 then -- LITTLE CHEST CLOSED
-        chests = {
-          next = chests,
-          x = i,
-          y = j,
-          type = "little",
-          inside = "score",
-          open = 0
-        }
-      end
-      if val == 21 then -- LITTLE CHEST OPEN
-        chests = {
-          next = chests,
-          x = i,
-          y = j,
-          type = "little",
-          inside = "nothing",
-          open = 1
-        }
-      end
-      if val == 21 then -- BIG CHEST 
-        chests = {
-          next = chests,
-          x = i,
-          y = j,
+        })
+      elseif val == 20 then -- BIG CHEST
+        EntityManager:create(GAME_CONFIG.ENTITY_TYPES.CHEST, i, j, {
           type = "big",
-          inside = "nothing",
-          open = 0
-        }
+          open = 0,
+          content = "life"
+        })
+      elseif val == 21 then -- SMALL CHEST
+        EntityManager:create(GAME_CONFIG.ENTITY_TYPES.CHEST, i, j, {
+          type = "small",
+          open = 0,
+          content = "score"
+        })
       end
     end
+  end
+  
+  -- Définir une position par défaut pour le joueur en mode Attract
+  if game.state == 0 then
+    player.x = 75
+    player.y = 10
   end
 end
 
@@ -187,30 +264,24 @@ function flyBy()
 end
 
 function checkInteraction()
-  -- collide with Monsters
-  local m = monsters
-  while m do
-    if m.x == player.x then
-      if m.y == player.y then
+  -- Collision avec les monstres
+  for _, monster in ipairs(EntityManager.entities) do
+    if monster.type == GAME_CONFIG.ENTITY_TYPES.MONSTER then
+      if monster.x == player.x and monster.y == player.y then
         player.life = player.life - 1
       end
     end
-    m = m.next
   end
-  -- IF GREEN KEY
-  if mget(player.x, player.y) == 239 then
+
+  -- Récupération des clés
+  local val = mget(player.x, player.y)
+  if val == 239 then -- GREEN KEY
     player.greenKey = 1
-  end
-  -- IF BLUE KEY
-  if mget(player.x, player.y) == 255 then
+  elseif val == 255 then -- BLUE KEY
     player.blueKey = 1
-  end
-  -- IF RED KEY
-  if mget(player.x, player.y) == 223 then
+  elseif val == 223 then -- RED KEY
     player.redKey = 1
-  end
-  -- IF YELLOW KEY
-  if mget(player.x, player.y) == 207 then
+  elseif val == 207 then -- YELLOW KEY
     player.yellowKey = 1
   end
 end
@@ -362,70 +433,29 @@ function playerCanMove(x, y)
     val == 37 or val == 18 then return -1 end
 
   if val == 2 then -- Secret Door
-    if doorIsOpen(x, y) == 0 then
-      return -1
-    else
-      return 1
+    local door = EntityManager:findAt(x, y)
+    if door and door.type == GAME_CONFIG.ENTITY_TYPES.DOOR then
+      return door.properties.open and 1 or -1
     end
+    return -1
   end
 
-  if val == 34 then -- Green Door
-    if player.greenKey == 0 then
-      return -1
-    else
-      if doorIsOpen(x, y) == 0 then
-        return -1
-      else
-        return 1
-      end
+  if val == 33 or val == 34 or val == 35 or val == 36 then
+    local door = EntityManager:findAt(x, y)
+    if door and door.type == GAME_CONFIG.ENTITY_TYPES.DOOR then
+      return door.properties.open and 1 or -1
     end
-  end
-
-  if val == 35 then -- Blue Door      
-    if player.blueKey == 0 then
-      return -1
-    else
-      if doorIsOpen(x, y) == 0 then
-        return -1
-      else
-        return 1
-      end
-    end
-  end
-
-  if val == 33 then -- Red Door
-    if player.redKey == 0 then
-      return -1
-    else
-      if doorIsOpen(x, y) == 0 then
-        return -1
-      else
-        return 1
-      end
-    end
-  end
-
-  if val == 36 then -- Yellow Door
-    if player.yellowKey == 0 then
-      return -1
-    else
-      if doorIsOpen(x, y) == 0 then
-        return -1
-      else
-        return 1
-      end
-    end
-
+    return -1
   end
 
   if player.state == 3 then -- AIMING
     return 0
   else
-    if doorIsOpen(x, y) == 0 then
-      return -1
-    else
-      return 1
+    local door = EntityManager:findAt(x, y)
+    if door and door.type == GAME_CONFIG.ENTITY_TYPES.DOOR then
+      return door.properties.open and 1 or -1
     end
+    return 1
   end
 end
 
@@ -443,101 +473,52 @@ end
 -- ------------------------------------
 
 function doorIsOpen(x, y)
-  local d = doors
-  while d do
-    if d.x == x and d.y == y then
-      if d.open == 1 then
-        return 1
-      else
-        return 0
-      end
-    end
-    d = d.next
+  local door = EntityManager:findAt(x, y)
+  if door and door.type == GAME_CONFIG.ENTITY_TYPES.DOOR then
+    return door.properties.open == 1
   end
+  return false
 end
 
 function chgDoorState(x, y)
-  local d = doors
-  while d do
-    if d.x == x and d.y == y then
-      if d.color == "secret" then
-        if d.open == 0 then
-          d.open = 1
-        else
-          d.open = 0
-        end
-      end
-
-      if d.color == "green" and player.greenKey == 1 then
-        if d.open == 0 then
-          d.open = 1
-        else
-          d.open = 0
-        end
-        return
-      end
-      if d.color == "blue" and player.blueKey == 1 then
-        if d.open == 0 then
-          d.open = 1
-        else
-          d.open = 0
-        end
-        return
-      end
-      if d.color == "red" and player.redKey == 1 then
-        if d.open == 0 then
-          d.open = 1
-        else
-          d.open = 0
-        end
-        return
-      end
-      if d.color == "yellow" and player.yellowKey == 1 then
-        if d.open == 0 then
-          d.open = 1
-        else
-          d.open = 0
-        end
-        return
-      end
-
+  local door = EntityManager:findAt(x, y)
+  if door and door.type == GAME_CONFIG.ENTITY_TYPES.DOOR then
+    if door.properties.color == "secret" then
+      door.properties.open = door.properties.open == 0 and 1 or 0
+    elseif door.properties.color == "green" and player.greenKey == 1 then
+      door.properties.open = door.properties.open == 0 and 1 or 0
+      player.greenKey = 0
+    elseif door.properties.color == "blue" and player.blueKey == 1 then
+      door.properties.open = door.properties.open == 0 and 1 or 0
+      player.blueKey = 0
+    elseif door.properties.color == "red" and player.redKey == 1 then
+      door.properties.open = door.properties.open == 0 and 1 or 0
+      player.redKey = 0
+    elseif door.properties.color == "yellow" and player.yellowKey == 1 then
+      door.properties.open = door.properties.open == 0 and 1 or 0
+      player.yellowKey = 0
     end
-    d = d.next
   end
 end
+
 -- ------------------------------------
 -- -------------- CHESTS -------------
 -- ------------------------------------
 
 function chestIsHere(x, y)
-  local c = chests
-  while c do
-    if c.x == x and c.y == y then return 1 end
-    c = c.next
-  end
-  return 0
+  local chest = EntityManager:findAt(x, y)
+  return chest and chest.type == GAME_CONFIG.ENTITY_TYPES.CHEST
 end
 
 function chgChestState(x, y)
-  local c = chests
-  while c do
-    if c.x == x and c.y == y then
-      if c.open == 0 then
-        if c.inside == "life" then
-          player.life = player.life + 5
-          c.inside = "nothing"
-        end
-        if c.inside == "score" then
-          player.score = player.score + 100
-          c.inside = "nothing"
-        end
-
-        c.open = 1
-      else
-        c.open = 0
-      end
+  local chest = EntityManager:findAt(x, y)
+  if chest and chest.type == GAME_CONFIG.ENTITY_TYPES.CHEST and not chest.properties.open then
+    if chest.properties.content == "life" then
+      player.life = player.life + 5
+    elseif chest.properties.content == "score" then
+      player.score = player.score + 100
     end
-    c = c.next
+    chest.properties.open = true
   end
 end
 
@@ -545,70 +526,77 @@ end
 -- MONSTERS UPDATE
 -- ----------------------
 function updateMonster()
-
   if game.time % 20 == 0 then
-
-    local m = monsters
-    while m do
-      if m.dir == 0 then
-        if monsterCanMove(m.x + 1, m.y) == 1 then
-          m.x = m.x + 1
-          m.dir = 0
-        else
-          m.dir = toInt(math.random(0, 3))
+    for _, monster in ipairs(EntityManager.entities) do
+      if monster.type == GAME_CONFIG.ENTITY_TYPES.MONSTER then
+        if monster.properties.dir == 0 then -- UP
+          if monsterCanMove(monster.x, monster.y - 1) then
+            monster.y = monster.y - 1
+          else
+            monster.properties.dir = math.random(0, 3)
+          end
+        elseif monster.properties.dir == 1 then -- RIGHT
+          if monsterCanMove(monster.x + 1, monster.y) then
+            monster.x = monster.x + 1
+          else
+            monster.properties.dir = math.random(0, 3)
+          end
+        elseif monster.properties.dir == 2 then -- DOWN
+          if monsterCanMove(monster.x, monster.y + 1) then
+            monster.y = monster.y + 1
+          else
+            monster.properties.dir = math.random(0, 3)
+          end
+        elseif monster.properties.dir == 3 then -- LEFT
+          if monsterCanMove(monster.x - 1, monster.y) then
+            monster.x = monster.x - 1
+          else
+            monster.properties.dir = math.random(0, 3)
+          end
         end
       end
-      if m.dir == 1 then
-        if monsterCanMove(m.x, m.y - 1) == 1 then
-          m.y = m.y - 1
-          m.dir = 1
-        else
-          m.dir = toInt(math.random(0, 3))
-        end
-      end
-      if m.dir == 2 then
-        if monsterCanMove(m.x - 1, m.y) == 1 then
-          m.x = m.x - 1
-          m.dir = 2
-        else
-          m.dir = toInt(math.random(0, 3))
-        end
-      end
-      if m.dir == 3 then
-        if monsterCanMove(m.x, m.y + 1) == 1 then
-          m.y = m.y + 1
-          m.dir = 3
-        else
-          m.dir = toInt(math.random(0, 3))
-        end
-      end
-      m = m.next
     end
   end
-
 end
 
 function monsterCanMove(x, y)
-  val = mget(x, y)
-  if val == 1 or val == 2 or val == 3 or val == 8 or val ==
-    9 or val == 39 or val == 10 or val == 11 or val ==
-    12 or val == 23 or val == 15 or val == 17 or val ==
-    20 or val == 21 or val == 22 or val == 37 or val ==
-    18 or val == 14 then
-    return 0
-  else
-    if val == 33 or val == 34 or val == 35 or val == 36 then
-      return doorIsOpen(x, y)
-    end
-    return 1
+  local val = mget(x, y)
+  if val == 1 or val == 3 or val == 39 or val == 10 or
+    val == 11 or val == 12 or val == 23 or val == 15 or
+    val == 17 or val == 20 or val == 21 or val == 22 or
+    val == 37 or val == 18 then 
+    return false 
   end
+
+  if val == 2 then -- Secret Door
+    return doorIsOpen(x, y)
+  end
+
+  if val == 33 or val == 34 or val == 35 or val == 36 then
+    return doorIsOpen(x, y)
+  end
+
+  return true
 end
 
 -- -----------------------------
 -- DRAW PLAYER
 -- -----------------------------
 function drawPlayer()
+  -- Si on est en mode flyBy, ne pas dessiner le joueur (déjà dessiné dans drawMapSprite)
+  if game.state == -1 then
+    return
+  end
+  
+  -- Pour l'écran titre (Attract Mode)
+  if game.state == 0 then
+    -- Position fixe pour l'écran titre (coordonnées absolues)
+    spr(256, 3 * 24, 2 * 24, 15, 1, 0, 0, 3, 3)
+    spr(271, 3 * 24 + 8, 2 * 24 + 4, 15, 1, 0, 0, 1, 1)
+    return
+  end
 
+  -- Pour les autres modes de jeu
   if player.state == 0 then
     -- En Face
     spr(256, (player.x - camera.x) * 24,
@@ -740,32 +728,30 @@ end
 -- print(game.time%30//15,75,2*24,10,2,2)
 
 function drawMonsters()
-  local m = monsters
-  while m do
-    if m.dir == -1 then
-      spr(352 + game.time % 30 // 15 * 3,
-          (m.x - camera.x) * 24, (m.y - camera.y) * 24,
-          15, 1, m.dir, 0, 3, 3)
+  for _, monster in ipairs(EntityManager.entities) do
+    if monster.type == GAME_CONFIG.ENTITY_TYPES.MONSTER then
+      if monster.properties.dir == 0 then -- UP
+        spr(352 + game.time % 30 // 15 * 3,
+            (monster.x - camera.x) * 24,
+            (monster.y - camera.y) * 24,
+            15, 1, 0, 0, 3, 3)
+      elseif monster.properties.dir == 1 then -- RIGHT
+        spr(352 + game.time % 30 // 15 * 3,
+            (monster.x - camera.x) * 24,
+            (monster.y - camera.y) * 24,
+            15, 1, 0, 0, 3, 3)
+      elseif monster.properties.dir == 2 then -- DOWN
+        spr(358,
+            (monster.x - camera.x) * 24,
+            (monster.y - camera.y) * 24,
+            15, 1, 0, 0, 3, 3)
+      elseif monster.properties.dir == 3 then -- LEFT
+        spr(352 + game.time % 30 // 15 * 3,
+            (monster.x - camera.x) * 24,
+            (monster.y - camera.y) * 24,
+            15, 1, 1, 0, 3, 3)
+      end
     end
-    if m.dir == 0 then -- Right
-      spr(352 + game.time % 30 // 15 * 3,
-          (m.x - camera.x) * 24, (m.y - camera.y) * 24,
-          15, 1, m.dir, 0, 3, 3)
-    end
-    if m.dir == 1 then -- UP
-      spr(361, (m.x - camera.x) * 24,
-          (m.y - camera.y) * 24, 15, 1, 0, 0, 3, 3)
-    end
-    if m.dir == 2 then -- Left
-      spr(352 + game.time % 30 // 15 * 3,
-          (m.x - camera.x) * 24, (m.y - camera.y) * 24,
-          15, 1, 1, 0, 3, 3)
-    end
-    if m.dir == 3 then -- Down
-      spr(358, (m.x - camera.x) * 24,
-          (m.y - camera.y) * 24, 15, 1, 0, 0, 3, 3)
-    end
-    m = m.next
   end
 end
 
@@ -850,66 +836,62 @@ function drawMap(x, y) -- draw 64x64 Sprite Map
 end
 
 function drawDoors()
-  local d = doors
-  while d do
-    if d.open == 0 then
-      if d.color == "green" then
-        spr(211, (d.x - camera.x) * 24,
-            (d.y - camera.y) * 24, -1, 1, 0, 0, 3, 3)
-        spr(239, (d.x - camera.x) * 24 + 8,
-            (d.y - camera.y) * 24 + 8, -1, 1, 0, 0, 1, 1)
-      end
-      if d.color == "blue" then
-        spr(211, (d.x - camera.x) * 24,
-            (d.y - camera.y) * 24, -1, 1, 0, 0, 3, 3)
-        spr(255, (d.x - camera.x) * 24 + 8,
-            (d.y - camera.y) * 24 + 8, -1, 1, 0, 0, 1, 1)
-      end
-      if d.color == "red" then
-        spr(211, (d.x - camera.x) * 24,
-            (d.y - camera.y) * 24, -1, 1, 0, 0, 3, 3)
-        spr(223, (d.x - camera.x) * 24 + 8,
-            (d.y - camera.y) * 24 + 8, -1, 1, 0, 0, 1, 1)
-      end
-      if d.color == "yellow" then
-        spr(211, (d.x - camera.x) * 24,
-            (d.y - camera.y) * 24, -1, 1, 0, 0, 3, 3)
-        spr(207, (d.x - camera.x) * 24 + 8,
-            (d.y - camera.y) * 24 + 8, -1, 1, 0, 0, 1, 1)
-      end
-      if d.color == "secret" then
-        -- Secret Wall
-        spr(65, (d.x - camera.x) * 24,
-            (d.y - camera.y) * 24, -1, 1, 0, 0, 3, 3)
-        spr(2, (d.x - camera.x) * 24 + 8,
-            (d.y - camera.y) * 24 + 8, -1, 1, 0, 0, 1, 1)
+  for _, door in ipairs(EntityManager.entities) do
+    if door.type == GAME_CONFIG.ENTITY_TYPES.DOOR then
+      if door.properties.open == 0 then
+        if door.properties.color == "secret" then
+          -- Secret Wall
+          spr(65, (door.x - camera.x) * 24,
+              (door.y - camera.y) * 24, -1, 1, 0, 0, 3, 3)
+          spr(2, (door.x - camera.x) * 24 + 8,
+              (door.y - camera.y) * 24 + 8, -1, 1, 0, 0, 1, 1)
+        elseif door.properties.color == "green" then
+          spr(211, (door.x - camera.x) * 24,
+              (door.y - camera.y) * 24, -1, 1, 0, 0, 3, 3)
+          spr(239, (door.x - camera.x) * 24 + 8,
+              (door.y - camera.y) * 24 + 8, -1, 1, 0, 0, 1, 1)
+        elseif door.properties.color == "blue" then
+          spr(211, (door.x - camera.x) * 24,
+              (door.y - camera.y) * 24, -1, 1, 0, 0, 3, 3)
+          spr(255, (door.x - camera.x) * 24 + 8,
+              (door.y - camera.y) * 24 + 8, -1, 1, 0, 0, 1, 1)
+        elseif door.properties.color == "red" then
+          spr(211, (door.x - camera.x) * 24,
+              (door.y - camera.y) * 24, -1, 1, 0, 0, 3, 3)
+          spr(223, (door.x - camera.x) * 24 + 8,
+              (door.y - camera.y) * 24 + 8, -1, 1, 0, 0, 1, 1)
+        elseif door.properties.color == "yellow" then
+          spr(211, (door.x - camera.x) * 24,
+              (door.y - camera.y) * 24, -1, 1, 0, 0, 3, 3)
+          spr(207, (door.x - camera.x) * 24 + 8,
+              (door.y - camera.y) * 24 + 8, -1, 1, 0, 0, 1, 1)
+        end
       end
     end
-    d = d.next
   end
 end
 
 function drawChests()
-  local c = chests
-  while c do
-    -- Big Chest
-    if c.type == "big" then
-      spr(185, (c.x - camera.x) * 24,
-          (c.y - camera.y) * 24 + 7, -1, 1, 0, 0, 3, 2)
-      return
+  for _, chest in ipairs(EntityManager.entities) do
+    if chest.type == GAME_CONFIG.ENTITY_TYPES.CHEST then
+      if chest.properties.type == "big" then
+        if chest.properties.open then
+          spr(185, (chest.x - camera.x) * 24,
+              (chest.y - camera.y) * 24 + 7, -1, 1, 0, 0, 3, 2)
+        else
+          spr(185, (chest.x - camera.x) * 24,
+              (chest.y - camera.y) * 24 + 7, -1, 1, 0, 0, 3, 2)
+        end
+      else
+        if chest.properties.open then
+          spr(153, (chest.x - camera.x) * 24,
+              (chest.y - camera.y) * 24 + 8, -1, 1, 0, 0, 3, 2)
+        else
+          spr(121, (chest.x - camera.x) * 24,
+              (chest.y - camera.y) * 24 + 8, -1, 1, 0, 0, 3, 2)
+        end
+      end
     end
-
-    -- Little Chest
-    if c.open == 0 then
-      spr(121, (c.x - camera.x) * 24,
-          (c.y - camera.y) * 24 + 8, -1, 1, 0, 0, 3, 2)
-    end
-    -- Little Chest Open
-    if c.open == 1 then
-      spr(153, (c.x - camera.x) * 24,
-          (c.y - camera.y) * 24 + 8, -1, 1, 0, 0, 3, 2)
-    end
-    c = c.next
   end
 end
 
@@ -920,10 +902,11 @@ function drawMapSprite(val, i, j)
   if val == 1 then
     spr(65, i * 24, j * 24, -1, 1, 0, 0, 3, 3)
   end
-  -- Wall 2 
+  -- Wall 2 (normal, not secret)
   if val == 3 then
     spr(68, i * 24, j * 24, -1, 1, 0, 0, 3, 3)
   end
+  -- Secret Wall (valeur 2) n'est pas dessiné ici, mais dans drawDoors
   -- Stairs left
   if val == 4 then
     spr(71, i * 24, j * 24, -1, 1, 0, 0, 2, 3)
@@ -1017,17 +1000,17 @@ function drawMapSprite(val, i, j)
     spr(188, i * 24, j * 24 + 16, -1, 1, 0, 2, 3, 1)
   end
   if game.state == -1 then -- It's flyBy Mode
-    -- Gobelin Sprite	  
+    -- Gobelin Sprite    
     if val == 49 then
       spr(352, i * 24, j * 24, 15, 1, 0, 0, 3, 3)
     end
-    -- Player Sprite	  
+    -- Player Sprite    
     if val == 64 then
       spr(256, i * 24, j * 24, 15, 1, 0, 0, 3, 3)
       spr(271, i * 24 + 8, j * 24 + 4, 15, 1, 0, 0, 1, 1)
     end
   end
-  -- Big Desk	  
+  -- Big Desk    
   if val == 37 then
     spr(27, i * 24 - 32 + 3, j * 24, -1, 1, 0, 0, 5, 3)
     spr(27, i * 24 + 8 + 3, j * 24, -1, 1, 1, 0, 5, 3)
@@ -1056,7 +1039,7 @@ function drawMapSprite(val, i, j)
       spr(val, i * 24 + 8, j * 24 + 8, -1, 1, 0, 0, 1, 1)
     end
   end
-  -- Big Arch	  
+  -- Big Arch    
   if val == 55 then
     spr(74, i * 24 - 24 + 3, j * 24 - 24, -1, 1, 0, 0,
         4, 3)
@@ -1064,7 +1047,7 @@ function drawMapSprite(val, i, j)
     spr(124, i * 24 - 15, j * 24, -1, 1, 1, 0, 2, 3)
     spr(124, i * 24 + 22, j * 24, -1, 1, 1, 0, 2, 3)
   end
-  -- SpaceShip Control	  
+  -- SpaceShip Control    
   if val == 80 then
     spr(172, i * 24 + 5, j * 24 - 24 + 8, -1, 1, 0, 0,
         2, 1)
